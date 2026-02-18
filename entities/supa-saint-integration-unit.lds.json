@@ -1,0 +1,57 @@
+{
+  "_lds": {
+    "v": "0.1.0",
+    "id": "lds:construction/assembly/supa-saint-integration-unit",
+    "type": "structural_assembly",
+    "created_at": "2022-01-01T12:00:00Z",
+    "origin": "jenkintown-electricity"
+  },
+  "vectors": {
+    "category": [
+      "construction:glazing",
+      "assembly:composite",
+      "material:aluminum"
+    ],
+    "spatial": {
+      "bounds": [
+        [0, 0, 0],
+        [10, 10, 10]
+      ]
+    },
+    "temporal": {
+      "install_phase": 4
+    }
+  },
+  "core": {
+    "name": "Supa Saint Integration Unit",
+    "manufacturer": "Jenkintown Electricity",
+    "bom_structure": [
+      {
+        "role": "frame",
+        "material_type": "aluminum",
+        "quantity": 1,
+        "unit": "each"
+      },
+      {
+        "role": "glazing",
+        "material_type": "low-iron-glass",
+        "quantity": 2,
+        "unit": "each"
+      }
+    ]
+  },
+  "inference": {
+    "relates_to": [
+      "lds:construction/assembly/supa-saint-integration-unit-2"
+    ],
+    "requires": [
+      "lds:construction/material/aluminum-6063"
+    ],
+    "implies": [
+      "lds:construction/assembly/supa-saint-integration-unit-implies"
+    ]
+  },
+  "media": {
+    "spec_sheet": "https://example.com/supa-saint-integration-unit-spec-sheet.pdf"
+  }
+}
