@@ -353,10 +353,10 @@ async function launch(){
 
       let prompt;
       if(bn===1){
-        prompt=`L0 COMMAND: ${cmd}\n\nGenerate the complete required output. Follow the schema exactly. Output raw JSON only.`;
+        prompt=`INSTRUCTION: ${cmd}\n\nYOU MUST FOLLOW THE INSTRUCTION ABOVE EXACTLY.\nDO NOT echo back the input entity unchanged.\nDO NOT ignore the requested changes.\nOutput ONLY raw JSON. Start with {. End with }. Nothing else.`;
       } else {
         const last=S.bounces[S.bounces.length-1];
-        prompt=`L0 COMMAND: ${cmd}\n\nPREVIOUS OUTPUT:\n${lastOut}\n\nL1 KERNEL FAILURES — fields that were missing or empty:\n${last?.failed?.join('\n')||'none'}\n\nYou MUST include ALL missing fields in your output. Return complete valid JSON only. Raw JSON, start with {.`;
+        prompt=`INSTRUCTION: ${cmd}\n\nYOUR PREVIOUS OUTPUT HAD THESE SCHEMA FAILURES:\n${last?.failed?.join('\n')||'none'}\n\nPREVIOUS OUTPUT FOR REFERENCE:\n${lastOut}\n\nFIX ALL FAILURES. APPLY ALL CHANGES FROM THE INSTRUCTION.\nOutput ONLY raw JSON. Start with {. End with }. Nothing else.`;
       }
 
       const runCard=addCard(bn,mname,role,'RUNNING',`Executing...`,null);
