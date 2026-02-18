@@ -308,6 +308,7 @@
         <option value="material">lds://schemas/construction/material/v1</option>
         <option value="boundary">lds://schemas/validkernel/boundary/v1</option>
         <option value="generic">Generic — no schema enforcement</option>
+        <option value="command_audit">Command Audit — L0 command integrity check</option>
       </select>
 
       <div class="sgrid">
@@ -454,6 +455,33 @@ Required fields — use EXACTLY these types:
     name:'Generic',
     req:[],
     sys:`You are a precise, helpful assistant. Answer the user's request clearly and completely.`
+  },
+  command_audit:{
+    name:'validkernel://schemas/command-audit/v1',
+    req:['command_id','authority','target','mission','phases','definition_of_done','persistent_progress_protocol'],
+    sys:`You are a ValidKernel L0 Command auditor. You receive a command document (markdown or text) and produce a structured audit JSON.
+
+RULES:
+- Output ONLY raw JSON. Start with {. End with }. No markdown. No prose.
+- Extract fields from the command text. If a field is present and complete, mark it present.
+- Be strict: vague or placeholder values count as MISSING.
+
+Required output fields:
+{
+  "command_id": "the L0-CMD-XXXX-XXXX-XXX id string, or MISSING",
+  "authority": "authority name and role, or MISSING",
+  "target": "L2 target description, or MISSING",
+  "mission": "one-sentence summary of the primary objective",
+  "phases": ["array of phase names found in the command"],
+  "definition_of_done": ["array of done criteria found, or empty array if missing"],
+  "persistent_progress_protocol": "present|partial|missing",
+  "ambiguities": ["list of any ambiguous instructions that would cause an AI agent to halt or guess"],
+  "missing_sections": ["list of required L0 sections that are absent or incomplete"],
+  "blockers": ["list of anything that would prevent an L2 agent from starting execution"],
+  "audit_score": <integer 0-100 — overall command quality>,
+  "verdict": "PASS if audit_score >= 80 and blockers array is empty, otherwise FAIL",
+  "summary": "one sentence explaining the verdict"
+}`
   }
 };
 
@@ -596,7 +624,7 @@ async function launch(){
   document.getElementById('glabel').textContent='EXECUTOR — ACTIVE';
 
   addCard(0,'L1 KERNEL','GATE CHECK','GATE',
-    `Command received.\nSchema: ${schema.name}\nRequired fields: ${schema.req.length}\nMax bounces: ${S.mb}\nThreshold: ${S.ct}%\n\n→ ROUTING TO L2 EXECUTOR`,null);
+    `Command received.\nSchema: ${schema.name}\nRequired fields: ${schema.req.length}\nMax bounces: ${S.mb}\nThreshold: ${S.ct}%\n\n→ ${sk==='command_audit'?'ROUTING TO L2 COMMAND AUDITOR':'ROUTING TO L2 EXECUTOR'}`,null);
 
   let lastOut='',consecutive=0,bn=0;
 
@@ -675,7 +703,28 @@ async function launch(){
           if(ok){
             const gptCard=addCard(0,'GPT / gpt-4o-mini','FACT-CHECKER','RUNNING','Checking logical consistency...',null);
             try{
-              const gptPrompt=`You are a strict technical fact-checker for LDS (Logic Data System) entities.
+              const isCommandAudit = sk === 'command_audit';
+              const gptPrompt = isCommandAudit
+                ? `You are a strict L0 Command integrity auditor for ValidKernel governance.
+
+Review this command audit JSON produced by the L2 proposer and verify:
+1. command_id — is it present and follows L0-CMD-YYYY-MMDD-NNN format?
+2. phases — are all phases clearly defined with entry/exit criteria?
+3. definition_of_done — are done criteria specific and verifiable (not vague)?
+4. persistent_progress_protocol — is PPP present so work survives token limits?
+5. ambiguities — does the ambiguities array identify any real blockers for an AI agent?
+6. blockers — is the blockers array accurate?
+7. audit_score — is the score justified by the findings?
+8. verdict — does PASS/FAIL match the audit_score and blockers?
+
+Audit JSON to review:
+${clean}
+
+Respond in this exact format:
+VERDICT: PASS or FAIL
+ISSUES: (list any problems found, or "none")
+CONFIDENCE: (0-100%)`
+                : `You are a strict technical fact-checker for LDS (Logic Data System) entities.
 
 Review this entity and check for:
 1. Semantic consistency — do the type, category tags, BOM, and name all agree?
@@ -691,7 +740,9 @@ VERDICT: PASS or FAIL
 ISSUES: (list any problems found, or "none")
 CONFIDENCE: (0-100%)`;
 
-              const gptSys=`You are a precise technical auditor. You review structured data for logical consistency and flag issues concisely. Never add fields or suggest improvements unless explicitly asked. Only audit what is there.`;
+              const gptSys = isCommandAudit
+                ? `You are a precise ValidKernel governance auditor. You review L0 command audit reports for completeness and accuracy. Flag any audit findings that are vague, missing, or would prevent an AI agent from executing the command deterministically.`
+                : `You are a precise technical auditor. You review structured data for logical consistency and flag issues concisely. Never add fields or suggest improvements unless explicitly asked. Only audit what is there.`;
               const gptResult=await callGPT(gptPrompt,gptSys,ok);
 
               const gptPass=gptResult.includes('VERDICT: PASS');
@@ -1161,7 +1212,21 @@ const TYPE_RULES = {
     { path:'inference.conflicts',       rule:'type', expected:'array' },
     { path:'inference.requires',        rule:'type', expected:'array' },
   ],
-  generic: []
+  generic: [],
+  command_audit: [
+    { path:'command_id',                   rule:'pattern', pattern:/^L0-CMD-\d{4}-\d{4}-\d{3,}/ },
+    { path:'authority',                    rule:'type',    expected:'string' },
+    { path:'target',                       rule:'type',    expected:'string' },
+    { path:'mission',                      rule:'type',    expected:'string' },
+    { path:'phases',                       rule:'type',    expected:'array' },
+    { path:'definition_of_done',           rule:'type',    expected:'array' },
+    { path:'persistent_progress_protocol', rule:'enum',    values:['present','partial','missing'] },
+    { path:'ambiguities',                  rule:'type',    expected:'array' },
+    { path:'blockers',                     rule:'type',    expected:'array' },
+    { path:'audit_score',                  rule:'type',    expected:'number' },
+    { path:'verdict',                      rule:'enum',    values:['PASS','FAIL'] },
+    { path:'summary',                      rule:'type',    expected:'string' },
+  ]
 };
 
 function validateTypes(txt, schemaKey) {
