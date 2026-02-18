@@ -297,6 +297,8 @@ async function callGPT(prompt,sys,key){
   return(await r.json()).choices[0].message.content;
 }
 
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
 function addCard(num,model,role,status,content,score){
   const log=document.getElementById('blog');
   const emp=document.getElementById('emp');
