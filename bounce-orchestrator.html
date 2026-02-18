@@ -316,15 +316,13 @@ function setFoot(t){document.getElementById('fstat').textContent=t}
 
 async function launch(){
   const cmd=document.getElementById('cmd').value.trim();
-  const ak=document.getElementById('akey').value.trim();
   const gk=document.getElementById('gkey').value.trim();
+  const ak=gk;
   const sk=document.getElementById('schema').value;
   const schema=SCHEMAS[sk];
 
   if(!cmd){alert('Enter an L0 command.');return}
   if(!gk){alert('Groq API key required.');return}
-  // Both models use Groq key
-  const ak=gk;
 
   S.running=true;S.bounces=[];S.final=null;
   S.sid='BS-'+Date.now().toString(36).toUpperCase();
