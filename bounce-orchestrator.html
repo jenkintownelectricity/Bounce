@@ -191,12 +191,14 @@ const SCHEMAS={
   assembly:{
     name:'lds://schemas/construction/assembly/v1',
     req:['_lds.v','_lds.id','_lds.type','vectors.category','core.name','core.manufacturer','core.bom_structure','inference.relates_to','inference.requires'],
-    sys:`You are an LDS entity generator. Output ONLY valid JSON — no markdown, no prose, no code blocks. Raw JSON only.
+    sys:`You are an LDS entity generator. You follow instructions EXACTLY.
 
-Generate a complete LDS assembly entity with ALL of these fields:
-_lds.v (e.g. "0.1.0"), _lds.id (e.g. "lds:construction/assembly/my-unit"), _lds.type (one of: glazing_assembly, structural_assembly, mechanical_assembly), _lds.created_at, _lds.origin, vectors.category (array of 3+ tags like "construction:glazing", "assembly:composite", "material:aluminum"), vectors.spatial.bounds, vectors.temporal.install_phase, core.name, core.manufacturer, core.bom_structure (array with role/material_type/quantity/unit), inference.relates_to (array of lds: refs), inference.requires (array), inference.implies (array), media.spec_sheet.
-
-Start your response with { and end with }. Nothing else.`
+RULES:
+- Output ONLY raw JSON. Start with {. End with }. No markdown. No prose. No explanation.
+- When given specific field values in the instruction, USE THOSE EXACT VALUES.
+- Never substitute placeholder values like "my-unit", "my-origin", "My Manufacturer".
+- Never hallucinate generic content when specific content is provided.
+- Required fields: _lds.v, _lds.id, _lds.type, _lds.created_at, _lds.origin, vectors.category (3+ tags), vectors.spatial.bounds (array format [[x,y,z],[x,y,z]]), vectors.temporal.install_phase (integer), core.name, core.manufacturer, core.bom_structure (array), inference.relates_to (array), inference.requires (array), inference.implies (array), media.spec_sheet.`
   },
   material:{
     name:'lds://schemas/construction/material/v1',
