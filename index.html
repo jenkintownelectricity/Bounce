@@ -185,6 +185,80 @@
   .tv-st.p{color:var(--green)}.tv-st.f{color:var(--red)}
   .tv-why{font-size:7px;color:var(--red);flex:0 0 auto;margin-left:6px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+
+  /* ── REPLAY MODAL ───────────────────────────── */
+  .rpl-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:none;align-items:center;justify-content:center}
+  .rpl-overlay.open{display:flex}
+  .rpl-modal{background:#0c0c0c;border:1px solid var(--border);width:min(780px,95vw);max-height:90vh;display:flex;flex-direction:column;border-radius:2px}
+  .rpl-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .rpl-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:var(--green)}
+  .rpl-sub{font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-top:2px}
+  .rpl-close{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:4px 10px;cursor:pointer}
+  .rpl-close:hover{border-color:var(--red);color:var(--red)}
+  /* Timeline strip */
+  .rpl-timeline{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0;overflow-x:auto;flex-shrink:0}
+  .rpl-timeline::-webkit-scrollbar{height:2px}.rpl-timeline::-webkit-scrollbar-thumb{background:var(--border)}
+  .rpl-node{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;min-width:52px;padding:0 4px}
+  .rpl-node:hover .rpl-dot{border-color:var(--white)}
+  .rpl-node.active .rpl-dot{background:var(--green);border-color:var(--green);box-shadow:0 0 8px rgba(0,255,136,.4)}
+  .rpl-node.pass .rpl-dot{border-color:var(--green)}
+  .rpl-node.fail .rpl-dot{border-color:var(--red)}
+  .rpl-node.gate .rpl-dot{border-color:var(--amber)}
+  .rpl-dot{width:14px;height:14px;border-radius:50%;background:#111;border:2px solid var(--border);transition:all .2s}
+  .rpl-nlabel{font-family:'Space Mono',monospace;font-size:7px;color:var(--text-dim);text-align:center;letter-spacing:.5px}
+  .rpl-nscore{font-family:'Space Mono',monospace;font-size:7px;color:var(--green)}
+  .rpl-connector{flex:1;height:1px;background:var(--border);min-width:8px;align-self:flex-start;margin-top:8px}
+  /* Step content */
+  .rpl-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .rpl-body::-webkit-scrollbar{width:3px}.rpl-body::-webkit-scrollbar-thumb{background:var(--border)}
+  .rpl-step-card{background:#111;border:1px solid var(--border);padding:14px;border-radius:2px;border-left:3px solid var(--border)}
+  .rpl-step-card.pass{border-left-color:var(--green)}.rpl-step-card.fail{border-left-color:var(--red)}.rpl-step-card.gate{border-left-color:var(--amber)}
+  .rpl-step-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .rpl-step-model{font-family:'Space Mono',monospace;font-size:10px;color:var(--white)}
+  .rpl-step-role{font-family:'Space Mono',monospace;font-size:7px;color:var(--text-dim);letter-spacing:1px;margin-top:2px}
+  .rpl-step-score{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);line-height:1}
+  .rpl-step-output{font-family:'Space Mono',monospace;font-size:9px;color:#777;line-height:1.6;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;background:#080808;padding:10px;border:1px solid #1a1a1a}
+  .rpl-step-output::-webkit-scrollbar{width:2px}.rpl-step-output::-webkit-scrollbar-thumb{background:var(--border)}
+  .rpl-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .rpl-badge{font-size:7px;padding:2px 6px;letter-spacing:1px;font-family:'Space Mono',monospace}
+  .rpl-badge.pass{background:rgba(0,255,136,.1);color:var(--green)}
+  .rpl-badge.fail{background:rgba(255,34,68,.1);color:var(--red)}
+  .rpl-badge.gate{background:rgba(255,170,0,.1);color:var(--amber)}
+  .rpl-badge.dim{background:rgba(255,255,255,.04);color:var(--text-dim)}
+  /* Nav */
+  .rpl-nav{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .rpl-navbtn{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:6px 16px;cursor:pointer;letter-spacing:1px}
+  .rpl-navbtn:hover{border-color:var(--green);color:var(--green)}
+  .rpl-navbtn:disabled{opacity:.3;cursor:not-allowed}
+  .rpl-progress{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim)}
+  .rpl-autoplay{background:none;border:1px solid var(--amber);color:var(--amber);font-family:'Space Mono',monospace;font-size:9px;padding:5px 12px;cursor:pointer;letter-spacing:1px}
+  .rpl-autoplay:hover{background:rgba(255,170,0,.08)}
+  .rpl-autoplay.playing{border-color:var(--red);color:var(--red)}
+
+  /* ── GITHUB PUSH PANEL ──────────────────────── */
+  .gh-panel{border-top:1px solid var(--border);padding:14px 20px;background:rgba(255,255,255,.01);display:none}
+  .gh-panel.open{display:block}
+  .gh-title{font-family:'Space Mono',monospace;font-size:9px;color:var(--amber);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+  .gh-title button{background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;padding:0}
+  .gh-title button:hover{color:var(--red)}
+  .gh-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+  .gh-field{display:flex;flex-direction:column;gap:3px}
+  .gh-label{font-family:'Space Mono',monospace;font-size:7px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+  .gh-input{background:var(--dim);border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:9px;padding:5px 8px;outline:none;width:100%}
+  .gh-input:focus{border-color:var(--green)}
+  .gh-input::placeholder{color:var(--text-dim)}
+  .gh-full{grid-column:1/-1}
+  .gh-push-btn{width:100%;padding:10px;background:none;border:1px solid var(--green);color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;transition:all .15s}
+  .gh-push-btn:hover{background:rgba(0,255,136,.08)}
+  .gh-push-btn:disabled{opacity:.4;cursor:not-allowed}
+  .gh-status{margin-top:6px;font-family:'Space Mono',monospace;font-size:9px;text-align:center;min-height:16px}
+  .gh-status.ok{color:var(--green)}.gh-status.err{color:var(--red)}.gh-status.running{color:var(--amber)}
+  .gh-note{font-size:7px;color:var(--text-dim);font-family:'Space Mono',monospace;margin-top:6px;line-height:1.5}
+
+  /* ── SCHEMA BUILDER (nav item) ─────────────── */
+  .sb-tog{font-family:'Space Mono',monospace;font-size:9px;padding:6px 10px;background:none;border:1px solid var(--border);color:var(--white);cursor:pointer;letter-spacing:1px}
+  .sb-tog:hover{border-color:var(--green);color:var(--green)}
+
 </style>
 </head>
 <body>
@@ -200,6 +274,7 @@
     <a class="navbtn active" href="index.html">BOUNCE</a>
     <a class="navbtn" href="graph.html">GRAPH</a>
     <a class="navbtn" href="sandbox.html">SANDBOX</a>
+    <a class="navbtn" href="schema.html">SCHEMAS</a>
     <button class="modetoggle" id="modetog" onclick="toggleMode()">◑</button>
   </nav>
 </header>
@@ -278,13 +353,52 @@
       </div>
     </div>
 
-    <div class="apanel" id="apanel">
+    
+    <!-- GitHub Push Panel -->
+    <div class="gh-panel" id="ghpanel">
+      <div class="gh-title">
+        <span>⬡ GITHUB PUSH</span>
+        <button onclick="document.getElementById('ghpanel').classList.remove('open')">✕</button>
+      </div>
+      <div class="gh-grid">
+        <div class="gh-field">
+          <div class="gh-label">Owner / Org</div>
+          <input class="gh-input" id="gh-owner" placeholder="jenkintownelectricity">
+        </div>
+        <div class="gh-field">
+          <div class="gh-label">Repository</div>
+          <input class="gh-input" id="gh-repo" placeholder="Bounce">
+        </div>
+        <div class="gh-field">
+          <div class="gh-label">Branch</div>
+          <input class="gh-input" id="gh-branch" placeholder="main">
+        </div>
+        <div class="gh-field">
+          <div class="gh-label">File Path</div>
+          <input class="gh-input" id="gh-path" placeholder="entities/BS-XXXXXXXX.lds.json">
+        </div>
+        <div class="gh-field gh-full">
+          <div class="gh-label">Commit Message</div>
+          <input class="gh-input" id="gh-msg" placeholder="ADD: entity via BOUNCE">
+        </div>
+        <div class="gh-field gh-full">
+          <div class="gh-label">Personal Access Token (session only — never stored)</div>
+          <input class="gh-input" id="gh-pat" type="password" placeholder="ghp_...">
+        </div>
+      </div>
+      <button class="gh-push-btn" id="gh-push-btn" onclick="ghPush()">PUSH TO GITHUB</button>
+      <div class="gh-status" id="gh-status"></div>
+      <div class="gh-note">Token is held in memory only. Not written to localStorage. Cleared on page reload.</div>
+    </div>
+
+  <div class="apanel" id="apanel">
       <div class="atitle">⬡ AWAITING L0 APPROVAL</div>
       <div class="aout" id="aout"></div>
       <div class="abuts">
         <button class="bapprove" onclick="decide('APPROVE')">APPROVE</button>
         <button class="bredirect" onclick="decide('REDIRECT')">REDIRECT</button>
         <button class="bdeny" onclick="decide('DENY')">DENY</button>
+        <button class="bdeny" style="color:var(--amber);border-color:var(--amber)" onclick="toggleGHPanel()">⬡ GITHUB</button>
       </div>
     </div>
   </div>
@@ -1103,6 +1217,291 @@ function renderTypeValidation(card, clean, schemaKey) {
   }
 }
 
+
+// ── REPLAY ENGINE ─────────────────────────────────────────────────────────────
+let RPL = { steps:[], cur:0, timer:null, sid:null };
+
+function openReplay(sid) {
+  closeHistory();
+  const records = hlLoad();
+  const r = records.find(x => x.session_id === sid);
+  if (!r) return;
+
+  // Build steps array from stored record
+  const steps = [];
+
+  // L1 Gate open
+  steps.push({
+    type:'gate', label:'L1', sublabel:'GATE',
+    model:'L1 KERNEL', role:'GATE CHECK', status:'gate',
+    score:null,
+    content:`Command received.\nSchema: ${r.schema_name}\nMax bounces: ${r.max_bounces}\nThreshold: ${r.threshold}%\nCommand: ${(r.command||'').slice(0,120)}\n\n→ ROUTING TO L2 EXECUTOR`
+  });
+
+  // Bounce steps
+  for (const b of (r.bounces||[])) {
+    const passed = b.score >= r.threshold;
+    steps.push({
+      type: passed ? 'pass' : 'fail',
+      label: `B${b.bn}`,
+      sublabel: b.model ? b.model.split('/')[0].trim() : '',
+      model: b.model || '—',
+      role: b.role || '—',
+      status: passed ? 'pass' : 'fail',
+      score: b.score,
+      content: b.output_preview || '(no preview stored)',
+      failed: b.failed || [],
+      passed_fields: b.passed || []
+    });
+
+    // L1 gate after each bounce
+    steps.push({
+      type:'gate', label:'L1', sublabel:passed?'PASS':'FAIL',
+      model:'L1 KERNEL', role:'GATE CHECK', status:'gate',
+      score:b.score,
+      content:`${passed?'✓':'✗'} Bounce ${b.bn} — ${b.score}%\n${b.failed?.length?'Missing: '+b.failed.join(', '):'All required fields present'}`
+    });
+  }
+
+  // GPT fact-check (if we have the data)
+  if (r.gpt_result) {
+    const gptPass = r.gpt_result.includes('VERDICT: PASS');
+    steps.push({
+      type: gptPass ? 'pass' : 'fail',
+      label:'GPT', sublabel:'CHECK',
+      model:'GPT / gpt-4o-mini', role:'FACT-CHECKER',
+      status: gptPass ? 'pass' : 'fail',
+      score:null,
+      content: r.gpt_result
+    });
+  }
+
+  // L0 decision
+  const decStatus = r.decision==='APPROVE'?'pass':r.decision==='DENY'?'fail':'gate';
+  steps.push({
+    type: decStatus,
+    label:'L0', sublabel:r.decision||'—',
+    model:'L0 / ARMAND LEFEBVRE', role:'DECISION',
+    status: decStatus,
+    score:null,
+    content:`DECISION: ${r.decision||'—'}\nSession: ${r.session_id}\nFinal score: ${r.final_score}%\n${r.decision==='APPROVE'?'✓ Approved. Entity file downloaded.':r.decision==='DENY'?'✗ Denied.':'⟳ Redirected for revision.'}`
+  });
+
+  RPL.steps = steps;
+  RPL.cur = 0;
+  RPL.sid = sid;
+
+  // Build timeline
+  const tl = document.getElementById('rplTimeline');
+  tl.innerHTML = steps.map((s, i) => `
+    ${i>0?'<div class="rpl-connector"></div>':''}
+    <div class="rpl-node ${s.type}" id="rplNode${i}" onclick="rplGoTo(${i})">
+      <div class="rpl-dot"></div>
+      <div class="rpl-nlabel">${s.label}</div>
+      ${s.score!==null?`<div class="rpl-nscore">${s.score}%</div>`:''}
+    </div>`).join('');
+
+  document.getElementById('rplSub').textContent =
+    `${r.session_id} · ${r.schema_name} · ${(r.bounces||[]).length} bounces · ${r.final_score}% · ${r.decision||'—'}`;
+
+  document.getElementById('rplOverlay').classList.add('open');
+  rplGoTo(0);
+}
+
+function closeReplay() {
+  document.getElementById('rplOverlay').classList.remove('open');
+  rplStopAuto();
+}
+
+function rplGoTo(i) {
+  if (i < 0 || i >= RPL.steps.length) return;
+  RPL.cur = i;
+  const s = RPL.steps[i];
+
+  // Highlight active node
+  document.querySelectorAll('.rpl-node').forEach((n,j)=>{
+    n.classList.toggle('active', j===i);
+  });
+
+  // Render step card
+  const body = document.getElementById('rplBody');
+  const failBadges = (s.failed||[]).map(f=>`<span class="rpl-badge fail">✗ ${f}</span>`).join('');
+  const passBadges = (s.passed_fields||[]).map(f=>`<span class="rpl-badge pass">✓ ${f}</span>`).join('');
+
+  body.innerHTML = `
+    <div class="rpl-step-card ${s.status}">
+      <div class="rpl-step-head">
+        <div>
+          <div class="rpl-step-model">${s.model}</div>
+          <div class="rpl-step-role">${s.role}</div>
+        </div>
+        ${s.score!==null?`<div class="rpl-step-score">${s.score}%</div>`:'<span class="rpl-badge ${s.status}">${s.status.toUpperCase()}</span>'}
+      </div>
+      ${(failBadges||passBadges)?`<div class="rpl-meta-row">${failBadges}${passBadges}</div>`:''}
+      <div class="rpl-step-output">${esc(s.content)}</div>
+    </div>`;
+
+  // Nav state
+  document.getElementById('rplPrev').disabled = i===0;
+  document.getElementById('rplNext').disabled = i===RPL.steps.length-1;
+  document.getElementById('rplProg').textContent = `STEP ${i+1} / ${RPL.steps.length}`;
+}
+
+function rplStep(dir) { rplGoTo(RPL.cur + dir); }
+
+function rplToggleAuto() {
+  const btn = document.getElementById('rplAuto');
+  if (RPL.timer) {
+    rplStopAuto();
+  } else {
+    btn.textContent = '■ STOP';
+    btn.classList.add('playing');
+    RPL.timer = setInterval(() => {
+      if (RPL.cur >= RPL.steps.length-1) { rplStopAuto(); return; }
+      rplStep(1);
+    }, 1800);
+  }
+}
+
+function rplStopAuto() {
+  clearInterval(RPL.timer);
+  RPL.timer = null;
+  const btn = document.getElementById('rplAuto');
+  if(btn){btn.textContent='▶ AUTO';btn.classList.remove('playing');}
+}
+
+// Hook into history detail — add Replay button
+const _origShowHistoryDetail = showHistoryDetail;
+function showHistoryDetail(sid) {
+  _origShowHistoryDetail(sid);
+  // Append replay button after render
+  setTimeout(() => {
+    const detail = document.getElementById('hdrw-detail');
+    if (!detail) return;
+    // Avoid duplicates
+    if (detail.querySelector('.rpl-launch-btn')) return;
+    const btn = document.createElement('div');
+    btn.style.cssText = 'padding:0 16px 12px';
+    btn.innerHTML = `<button class="rpl-launch-btn" onclick="openReplay('${sid}')" style="width:100%;padding:10px;background:none;border:1px solid var(--green);color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer">▶ REPLAY SESSION</button>`;
+    const body = detail.querySelector('.hdet-body');
+    if(body) body.prepend(btn.firstElementChild);
+  }, 50);
+}
+
+// ── GITHUB PUSH ───────────────────────────────────────────────────────────────
+function toggleGHPanel() {
+  const p = document.getElementById('ghpanel');
+  p.classList.toggle('open');
+  if (p.classList.contains('open') && S.sid) {
+    // Auto-fill path with session ID
+    const pathEl = document.getElementById('gh-path');
+    if (!pathEl.value) pathEl.value = `entities/${S.sid}.lds.json`;
+    const msgEl = document.getElementById('gh-msg');
+    if (!msgEl.value) msgEl.value = `ADD: LDS entity ${S.sid} via BOUNCE`;
+  }
+}
+
+async function ghPush() {
+  const owner = document.getElementById('gh-owner').value.trim();
+  const repo  = document.getElementById('gh-repo').value.trim();
+  const branch = document.getElementById('gh-branch').value.trim() || 'main';
+  const path  = document.getElementById('gh-path').value.trim();
+  const msg   = document.getElementById('gh-msg').value.trim();
+  const pat   = document.getElementById('gh-pat').value.trim();
+  const status = document.getElementById('gh-status');
+
+  if (!owner||!repo||!path||!msg||!pat) {
+    status.textContent='⚠ Fill in all fields.';status.className='gh-status err';return;
+  }
+  if (!S.final) {
+    status.textContent='⚠ No approved entity to push.';status.className='gh-status err';return;
+  }
+
+  const btn = document.getElementById('gh-push-btn');
+  btn.disabled = true;
+  status.textContent='Pushing…';status.className='gh-status running';
+
+  try {
+    // Check if file exists to get SHA (required for update)
+    let sha = null;
+    const checkUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+    const checkRes = await fetch(checkUrl, {
+      headers:{ 'Authorization':'Bearer '+pat, 'Accept':'application/vnd.github+json' }
+    });
+    if (checkRes.ok) {
+      const existing = await checkRes.json();
+      sha = existing.sha;
+    }
+
+    const content = btoa(unescape(encodeURIComponent(S.final)));
+    const body = { message:msg, content, branch };
+    if (sha) body.sha = sha;
+
+    const pushUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+    const res = await fetch(pushUrl, {
+      method:'PUT',
+      headers:{
+        'Authorization':'Bearer '+pat,
+        'Accept':'application/vnd.github+json',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || res.status);
+    }
+    const data = await res.json();
+    status.textContent=`✓ Pushed: ${data.content?.html_url ? data.content.name : path}`;
+    status.className='gh-status ok';
+    // Log to session card
+    addCard(0,'GITHUB','PUSH','GATE',`✓ Entity pushed to ${owner}/${repo}/${path}\nBranch: ${branch}\nCommit: ${msg}`,null);
+  } catch(err) {
+    status.textContent='✗ '+err.message;
+    status.className='gh-status err';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── CUSTOM SCHEMA SYNC ────────────────────────────────────────────────────────
+// Load user-defined schemas from localStorage and inject into SCHEMAS + dropdown
+const CUSTOM_SCHEMA_KEY = 'vk-custom-schemas-v1';
+
+function loadCustomSchemas() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_SCHEMA_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function injectCustomSchemas() {
+  const customs = loadCustomSchemas();
+  const sel = document.getElementById('schema');
+  // Remove previously injected custom options
+  Array.from(sel.options).forEach(opt => {
+    if (opt.dataset.custom) sel.removeChild(opt);
+  });
+  for (const cs of customs) {
+    // Register into SCHEMAS runtime object
+    SCHEMAS['custom_'+cs.id] = {
+      name: cs.name + ' (custom)',
+      req: cs.fields.filter(f=>f.required).map(f=>f.path),
+      sys: `You are a precise JSON entity generator. Follow the schema exactly.\nRequired fields: ${cs.fields.filter(f=>f.required).map(f=>f.path+' ('+f.type+')').join(', ')}.\nOutput ONLY raw JSON. Start with {. End with }. No markdown.`
+    };
+    const opt = document.createElement('option');
+    opt.value = 'custom_'+cs.id;
+    opt.textContent = cs.name + ' (v'+cs.version+')';
+    opt.dataset.custom = '1';
+    sel.appendChild(opt);
+  }
+}
+
+// Call on load + listen for storage changes from schema.html
+window.addEventListener('load', () => { injectCustomSchemas(); });
+window.addEventListener('storage', e => {
+  if (e.key === CUSTOM_SCHEMA_KEY) injectCustomSchemas();
+});
+
 function toggleMode(){
   document.body.classList.toggle('light');
   const tog=document.getElementById('modetog');
@@ -1135,5 +1534,28 @@ if(localStorage.getItem('vk-theme')==='light'){document.body.classList.add('ligh
 </div>
 <input type="file" id="himport" accept=".json" style="display:none" onchange="importHistory(event)">
 
+
+<!-- Replay Modal -->
+<div class="rpl-overlay" id="rplOverlay" onclick="if(event.target===this)closeReplay()">
+  <div class="rpl-modal">
+    <div class="rpl-head">
+      <div>
+        <div class="rpl-title">SESSION REPLAY</div>
+        <div class="rpl-sub" id="rplSub">—</div>
+      </div>
+      <button class="rpl-close" onclick="closeReplay()">✕ CLOSE</button>
+    </div>
+    <div class="rpl-timeline" id="rplTimeline"></div>
+    <div class="rpl-body" id="rplBody"></div>
+    <div class="rpl-nav">
+      <button class="rpl-navbtn" id="rplPrev" onclick="rplStep(-1)">← PREV</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="rpl-autoplay" id="rplAuto" onclick="rplToggleAuto()">▶ AUTO</button>
+        <span class="rpl-progress" id="rplProg">—</span>
+      </div>
+      <button class="rpl-navbtn" id="rplNext" onclick="rplStep(1)">NEXT →</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
