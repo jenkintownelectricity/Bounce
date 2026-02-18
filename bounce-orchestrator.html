@@ -92,7 +92,8 @@
   <div class="hstatus">
     <div><span class="dot" id="cdot"></span><span id="clabel">CLAUDE —</span></div>
     <div><span class="dot" id="gdot"></span><span id="glabel">GROQ —</span></div>
-    <div>ValidKernel Orchestrator v2.0 — Claude + Groq</div>
+    <div><span class="dot" id="odot"></span><span id="olabel">GPT —</span></div>
+    <div>ValidKernel Orchestrator v2.1</div>
   </div>
 </header>
 
@@ -108,6 +109,10 @@
       <div class="arow">
         <span class="alabel" id="glabelk">GROQ</span>
         <input class="akey" type="password" id="gkey" placeholder="gsk_...">
+      </div>
+      <div class="arow">
+        <span class="alabel" id="olabelk">OPENAI</span>
+        <input class="akey" type="password" id="okey" placeholder="sk-proj-...">
       </div>
     </div>
 
@@ -277,7 +282,20 @@ async function callClaude(prompt,sys,key){
   return(await r.json()).content[0].text;
 }
 
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+async function callGPT(prompt,sys,key){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'gpt-4o-mini',
+      messages:[{role:'system',content:sys},{role:'user',content:prompt}],
+      temperature:0.1,
+      max_tokens:1500
+    })
+  });
+  if(!r.ok)throw new Error('GPT '+r.status+': '+await r.text());
+  return(await r.json()).choices[0].message.content;
+}
 
 function addCard(num,model,role,status,content,score){
   const log=document.getElementById('blog');
@@ -408,7 +426,57 @@ async function launch(){
         if(consecutive>=2){
           S.final=clean;
           addCard(0,'CONVERGED','SESSION COMPLETE','GATE',
-            `Session: ${S.sid}\nBounces: ${bn}\nScore: ${v.score}%\n\n→ AWAITING L0 APPROVAL`,null);
+            `Session: ${S.sid}\nBounces: ${bn}\nScore: ${v.score}%\n\n→ RUNNING GPT FACT-CHECK`,null);
+
+          // GPT FACT-CHECKER PASS
+          const ok=document.getElementById('okey').value.trim();
+          if(ok){
+            const gptCard=addCard(0,'GPT / gpt-4o-mini','FACT-CHECKER','RUNNING','Checking logical consistency...',null);
+            try{
+              const gptPrompt=`You are a strict technical fact-checker for LDS (Logic Data System) entities.
+
+Review this entity and check for:
+1. Semantic consistency — do the type, category tags, BOM, and name all agree?
+2. Logical completeness — are inference.relates_to references plausible?
+3. Data integrity — are quantities, units, and spatial bounds reasonable?
+4. Schema compliance — are all required fields present and non-empty?
+
+Entity to review:
+${clean}
+
+Respond in this exact format:
+VERDICT: PASS or FAIL
+ISSUES: (list any problems found, or "none")
+CONFIDENCE: (0-100%)`;
+
+              const gptSys=`You are a precise technical auditor. You review structured data for logical consistency and flag issues concisely. Never add fields or suggest improvements unless explicitly asked. Only audit what is there.`;
+              const gptResult=await callGPT(gptPrompt,gptSys,ok);
+
+              const gptPass=gptResult.includes('VERDICT: PASS');
+              gptCard.className='bcard '+(gptPass?'pass':'fail');
+              gptCard.querySelector('.cst').textContent=gptPass?'PASS':'FAIL';
+              gptCard.querySelector('.cst').className='cst '+(gptPass?'PASS':'FAIL');
+              gptCard.querySelector('pre').textContent=gptResult;
+
+              if(!gptPass){
+                addCard(0,'L1 KERNEL','FACT-CHECK GATE','GATE',
+                  `GPT flagged issues.\n${gptResult}\n\n→ ESCALATING TO L0 FOR REVIEW ANYWAY`,null);
+              } else {
+                addCard(0,'L1 KERNEL','FACT-CHECK GATE','GATE',
+                  `✓ GPT fact-check PASSED\n→ AWAITING L0 APPROVAL`,null);
+              }
+            }catch(err){
+              gptCard.className='bcard gate';
+              gptCard.querySelector('.cst').textContent='SKIP';
+              gptCard.querySelector('.cst').className='cst GATE';
+              gptCard.querySelector('pre').textContent='GPT unavailable: '+err.message+'\n→ Skipping fact-check, escalating to L0';
+            }
+          } else {
+            addCard(0,'GPT','FACT-CHECKER','GATE','No OpenAI key — skipping fact-check\n→ AWAITING L0 APPROVAL',null);
+          }
+
+          addCard(0,'CONVERGED','AWAITING L0','GATE',
+            `Session: ${S.sid}\nBounces: ${bn}\nKernel score: ${v.score}%\n\n→ AWAITING L0 APPROVAL`,null);
           break;
         }
       } else {
@@ -467,12 +535,33 @@ function decide(d){
 
 // Init — pre-fill keys
 window.addEventListener('load',()=>{
-  document.getElementById('akey').value='';
-  document.getElementById('gkey').value='';
   document.getElementById('cdot').className='dot';
   document.getElementById('gdot').className='dot';
+  document.getElementById('odot').className='dot';
   document.getElementById('clabel').textContent='CLAUDE — KEY REQUIRED';
   document.getElementById('glabel').textContent='GROQ — KEY REQUIRED';
+  document.getElementById('olabel').textContent='GPT — KEY REQUIRED';
+
+  // Wire up key fields to show live status
+  document.getElementById('akey').addEventListener('input',e=>{
+    const ok=e.target.value.trim().length>10;
+    document.getElementById('cdot').className='dot'+(ok?' live':'');
+    document.getElementById('clabel').textContent='CLAUDE — '+(ok?'READY':'KEY REQUIRED');
+    document.getElementById('alabel').className='alabel'+(ok?' ok':'');
+  });
+  document.getElementById('gkey').addEventListener('input',e=>{
+    const ok=e.target.value.trim().length>10;
+    document.getElementById('gdot').className='dot'+(ok?' live':'');
+    document.getElementById('glabel').textContent='GROQ — '+(ok?'READY':'KEY REQUIRED');
+    document.getElementById('glabelk').className='alabel'+(ok?' ok':'');
+  });
+  document.getElementById('okey').addEventListener('input',e=>{
+    const ok=e.target.value.trim().length>10;
+    document.getElementById('odot').className='dot'+(ok?' live':'');
+    document.getElementById('olabel').textContent='GPT — '+(ok?'READY':'OPTIONAL');
+    document.getElementById('olabelk').className='alabel'+(ok?' ok':'');
+  });
+
   setFoot('IDLE — ENTER API KEYS TO BEGIN');
 });
 </script>
