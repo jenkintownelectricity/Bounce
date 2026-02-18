@@ -213,9 +213,20 @@ Required: _lds.v, _lds.id (lds:construction/material/...), _lds.type, vectors.ca
   },
   boundary:{
     name:'lds://schemas/validkernel/boundary/v1',
-    req:['_lds.v','_lds.id','_lds.type','core.domain','core.role','inference.allowed_actions','inference.conflicts'],
+    req:['_lds.v','_lds.id','_lds.type','_lds.created_at','_lds.origin','core.domain','core.role','inference.allowed_actions','inference.conflicts','inference.requires'],
     sys:`You are a ValidKernel boundary entity generator. Output ONLY raw JSON. No markdown. Start with { end with }.
-Required: _lds.v, _lds.id, _lds.type="agent_boundary", core.domain, core.role, inference.allowed_actions (array), inference.conflicts (array), inference.requires (array).`
+
+Required fields — use EXACTLY these types:
+- _lds.v: STRING "0.1.0" (not a number)
+- _lds.id: STRING starting with "lds:"
+- _lds.type: STRING "agent_boundary"
+- _lds.created_at: ISO datetime string e.g. "2026-02-18T00:00:00Z"
+- _lds.origin: STRING org identifier
+- core.domain: STRING
+- core.role: STRING
+- inference.allowed_actions: ARRAY of strings
+- inference.conflicts: ARRAY of strings
+- inference.requires: ARRAY of strings`
   },
   generic:{
     name:'Generic',
