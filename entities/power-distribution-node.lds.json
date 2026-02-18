@@ -1,0 +1,36 @@
+{
+  "_lds": {
+    "v": "0.1.0",
+    "id": "lds:construction/assembly/power-distribution-node",
+    "type": "mechanical_assembly",
+    "created_at": "2026-02-18T00:00:00Z",
+    "origin": "jenkintown-electricity"
+  },
+  "vectors": {
+    "category": ["construction:electrical", "assembly:power-systems", "material:copper"],
+    "spatial": {
+      "bounds": [[0, 0, 0], [800, 1600, 400]],
+      "units": "millimeters"
+    },
+    "temporal": {
+      "install_phase": 4
+    }
+  },
+  "core": {
+    "name": "Power Distribution Node",
+    "manufacturer": "Jenkintown Electricity Corporation",
+    "bom_structure": [
+      {"role": "main_bus", "material_type": "copper-bus-bar", "quantity": 20, "unit": "meters"},
+      {"role": "breaker_array", "material_type": "molded-case-circuit-breaker", "quantity": 12, "unit": "units"},
+      {"role": "enclosure", "material_type": "powder-coated-steel", "quantity": 1, "unit": "unit"}
+    ]
+  },
+  "inference": {
+    "relates_to": ["lds:construction/assembly/supa-saint-integration-unit-v2"],
+    "requires": ["lds:construction/material/copper-conductors", "lds:construction/component/circuit-breaker"],
+    "implies": ["lds:construction/assembly/field-installation-ready", "lds:construction/assembly/high-current-capable"]
+  },
+  "media": {
+    "spec_sheet": "https://github.com/jenkintownelectricity/SUPA-SAINT/blob/main/docs/power-node-spec.pdf"
+  }
+}
