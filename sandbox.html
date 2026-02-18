@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDS SANDBOX — ValidKernel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+  :root{--black:#050505;--white:#f0ede6;--green:#00ff88;--red:#ff2244;--amber:#ffaa00;--blue:#00aaff;--purple:#aa44ff;--dim:#0d0d0d;--border:#1a1a1a;--text-dim:#333;--text-mid:#555}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--black);color:var(--white);font-family:'Space Mono',monospace;height:100vh;overflow:hidden;display:grid;grid-template-rows:48px 1fr 44px}
+  header{border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:var(--black);z-index:100;flex-shrink:0}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:6px}
+  .logo span{color:var(--green)}
+  .sitenav{display:flex;gap:6px;align-items:center}
+  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--text-mid);text-decoration:none;letter-spacing:2px;transition:all .15s}
+  .navbtn:hover{border-color:var(--green);color:var(--green)}
+  .navbtn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
+  main{display:grid;grid-template-columns:1fr 220px 1fr;overflow:hidden}
+  .lpanel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .phead{padding:12px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .phead strong{display:block;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:var(--green);margin-bottom:2px}
+  .phead span{font-size:8px;color:var(--text-mid);letter-spacing:1px}
+  .editor-wrap{flex:1;position:relative;overflow:hidden}
+  #json-input{width:100%;height:100%;background:var(--dim);color:var(--white);font-family:'Space Mono',monospace;font-size:11px;line-height:1.65;padding:14px 14px 14px 44px;border:none;outline:none;resize:none;tab-size:2}
+  #json-input::placeholder{color:var(--text-dim)}
+  .line-nums{position:absolute;top:0;left:0;width:32px;height:100%;background:#080808;border-right:1px solid var(--border);padding:14px 4px;text-align:right;font-size:10px;color:var(--text-dim);line-height:1.65;pointer-events:none;overflow:hidden;white-space:pre}
+  .cpanel{border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 14px;gap:12px;overflow-y:auto}
+  .clabel{font-size:8px;color:var(--text-mid);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+  select.ssel{width:100%;background:var(--dim);border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:7px 9px;outline:none;cursor:pointer}
+  select.ssel:focus{border-color:var(--green)}
+  .btn{width:100%;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;cursor:pointer;border:none;transition:all .15s}
+  .btn-primary{background:var(--green);color:var(--black)}
+  .btn-primary:hover{background:var(--white)}
+  .btn-ghost{background:none;color:var(--white);border:1px solid var(--border);font-size:12px;letter-spacing:2px;padding:7px}
+  .btn-ghost:hover{border-color:var(--green);color:var(--green)}
+  .btn-export{background:none;color:var(--green);border:1px solid var(--green);font-size:12px;letter-spacing:2px;padding:7px}
+  .btn-export:hover{background:rgba(0,255,136,0.08)}
+  .btn-export:disabled{opacity:0.3;cursor:not-allowed}
+  .score-wrap{background:var(--dim);border:1px solid var(--border);padding:12px;display:none}
+  .score-wrap.vis{display:block}
+  .score-num{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;text-align:center}
+  .score-bar{height:3px;background:#111;margin-top:8px;overflow:hidden}
+  .score-fill{height:100%;transition:width .5s ease,background .3s}
+  .verdict{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:4px;text-align:center;margin-top:6px}
+  .req-list{background:var(--dim);border:1px solid var(--border);padding:10px;display:none;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto}
+  .req-list.vis{display:flex}
+  .req-row{display:flex;align-items:center;justify-content:space-between;font-size:9px;padding:3px 0;border-bottom:1px solid var(--border)}
+  .req-row:last-child{border-bottom:none}
+  .req-field{color:var(--text-mid)}
+  .req-field.ok{color:var(--white)}
+  .req-icon{font-size:11px;font-weight:bold}
+  .req-icon.pass{color:var(--green)}
+  .req-icon.fail{color:var(--red)}
+  .rpanel{display:flex;flex-direction:column;overflow:hidden}
+  .rtabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+  .rtab{flex:1;padding:10px;font-size:9px;letter-spacing:2px;text-align:center;color:var(--text-mid);cursor:pointer;border-right:1px solid var(--border);transition:all .15s;background:none;border-top:none;border-left:none;border-bottom:none;font-family:'Space Mono',monospace}
+  .rtab:last-child{border-right:none}
+  .rtab.active{color:var(--green);background:rgba(0,255,136,0.04)}
+  .rtab:hover:not(.active){color:var(--white)}
+  .rtab-content{flex:1;overflow-y:auto;padding:14px 16px;display:none}
+  .rtab-content.active{display:block}
+  .rtab-content::-webkit-scrollbar{width:2px}
+  .rtab-content::-webkit-scrollbar-thumb{background:var(--border)}
+  .report-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-dim);font-size:9px;text-align:center}
+  .report-empty-big{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--border);letter-spacing:4px;line-height:1}
+  .report-section{margin-bottom:16px}
+  .report-section-title{font-size:7px;color:var(--text-mid);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:8px}
+  .field-row{display:flex;align-items:flex-start;justify-content:space-between;padding:4px 0;border-bottom:1px solid #0f0f0f;gap:8px;font-size:9px}
+  .field-key{color:var(--text-mid);flex:1;word-break:break-all}
+  .field-key.present{color:var(--white)}
+  .field-badge{font-size:8px;padding:1px 6px;flex-shrink:0;letter-spacing:1px}
+  .field-badge.pass{background:rgba(0,255,136,0.1);color:var(--green)}
+  .field-badge.fail{background:rgba(255,34,68,0.1);color:var(--red)}
+  .tree-node{font-size:10px;line-height:1.8}
+  .tree-key{color:var(--blue)}
+  .tree-str{color:var(--amber)}
+  .tree-num{color:var(--purple)}
+  .tree-bool{color:var(--green)}
+  .tree-null{color:var(--text-mid)}
+  .tree-bracket{color:var(--text-mid)}
+  .tree-toggle{cursor:pointer;user-select:none}
+  .tree-toggle:hover{color:var(--white)}
+  .tree-children{padding-left:16px;border-left:1px solid var(--border);margin-left:4px}
+  #raw-out{font-size:10px;line-height:1.65;color:#777;white-space:pre-wrap;word-break:break-word}
+  footer{border-top:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;font-size:9px;color:var(--text-dim);flex-shrink:0}
+  .ferr{color:var(--red)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">LDS<span>.</span>SANDBOX</div>
+  <nav class="sitenav">
+    <a class="navbtn" href="index.html">BOUNCE</a>
+    <a class="navbtn" href="graph.html">GRAPH</a>
+    <a class="navbtn active" href="sandbox.html">SANDBOX</a>
+  </nav>
+</header>
+<main>
+  <div class="lpanel">
+    <div class="phead"><strong>JSON EDITOR</strong><span>Paste or type raw LDS entity — Ctrl+Enter to validate</span></div>
+    <div class="editor-wrap">
+      <div class="line-nums" id="line-nums">1</div>
+      <textarea id="json-input" spellcheck="false" placeholder="Paste LDS JSON here..."></textarea>
+    </div>
+  </div>
+  <div class="cpanel">
+    <div>
+      <div class="clabel">Schema</div>
+      <select class="ssel" id="schema-select">
+        <option value="assembly">assembly — construction/v1</option>
+        <option value="material">material — construction/v1</option>
+        <option value="boundary">boundary — validkernel/v1</option>
+        <option value="generic">generic — no enforcement</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="runValidation()">VALIDATE</button>
+    <div class="score-wrap" id="score-wrap">
+      <div class="score-num" id="score-num">—</div>
+      <div class="score-bar"><div class="score-fill" id="score-fill"></div></div>
+      <div class="verdict" id="verdict">—</div>
+    </div>
+    <div>
+      <div class="clabel">Required Fields</div>
+      <div class="req-list" id="req-list"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:auto">
+      <button class="btn btn-ghost" onclick="loadExample()">LOAD EXAMPLE</button>
+      <button class="btn btn-ghost" onclick="clearEditor()">CLEAR</button>
+      <button class="btn btn-export" id="export-btn" onclick="exportJSON()" disabled>EXPORT .lds.json</button>
+    </div>
+  </div>
+  <div class="rpanel">
+    <div class="rtabs">
+      <button class="rtab active" onclick="switchTab('report')">REPORT</button>
+      <button class="rtab" onclick="switchTab('tree')">TREE</button>
+      <button class="rtab" onclick="switchTab('raw')">RAW</button>
+    </div>
+    <div class="rtab-content active" id="tab-report">
+      <div class="report-empty" id="report-empty"><div class="report-empty-big">IDLE</div><div>Paste JSON and hit VALIDATE</div></div>
+      <div id="report-content" style="display:none"></div>
+    </div>
+    <div class="rtab-content" id="tab-tree">
+      <div class="report-empty" id="tree-empty"><div class="report-empty-big">TREE</div><div>Validate to see parsed object</div></div>
+      <div class="tree-node" id="tree-content" style="display:none"></div>
+    </div>
+    <div class="rtab-content" id="tab-raw"><pre id="raw-out">// Validate to see formatted JSON</pre></div>
+  </div>
+</main>
+<footer>
+  <span>VALIDKERNEL / LEFEBVRE DESIGN SOLUTIONS</span>
+  <span id="fstat" style="letter-spacing:1px">L1 KERNEL SANDBOX — IDLE</span>
+  <span class="ferr" id="ferr"></span>
+</footer>
+<script>
+const SCHEMAS={
+  assembly:{name:'lds://schemas/construction/assembly/v1',req:['_lds.v','_lds.id','_lds.type','_lds.created_at','_lds.origin','vectors.category','vectors.spatial.bounds','vectors.temporal.install_phase','core.name','core.manufacturer','core.bom_structure','inference.relates_to','inference.requires']},
+  material:{name:'lds://schemas/construction/material/v1',req:['_lds.v','_lds.id','_lds.type','_lds.origin','vectors.category','core.name','core.manufacturer','inference.relates_to','inference.requires']},
+  boundary:{name:'lds://schemas/validkernel/boundary/v1',req:['_lds.v','_lds.id','_lds.type','_lds.created_at','_lds.origin','core.domain','core.role','inference.allowed_actions','inference.conflicts','inference.requires']},
+  generic:{name:'Generic — no enforcement',req:[]}
+};
+
+let lastParsed=null;
+const ta=document.getElementById('json-input');
+const lineNums=document.getElementById('line-nums');
+
+function updateLineNums(){
+  const lines=ta.value.split('\n').length;
+  lineNums.textContent=Array.from({length:lines},(_,i)=>i+1).join('\n');
+  lineNums.scrollTop=ta.scrollTop;
+}
+ta.addEventListener('input',updateLineNums);
+ta.addEventListener('scroll',()=>{lineNums.scrollTop=ta.scrollTop});
+updateLineNums();
+
+function getField(obj,path){return path.split('.').reduce((o,k)=>o&&o[k]!==undefined?o[k]:undefined,obj)}
+
+function runValidation(){
+  const raw=ta.value.trim();
+  const sk=document.getElementById('schema-select').value;
+  const schema=SCHEMAS[sk];
+  document.getElementById('ferr').textContent='';
+  if(!raw){setStatus('NO INPUT','var(--amber)');return}
+  let obj;
+  try{obj=JSON.parse(raw)}catch(e){
+    document.getElementById('ferr').textContent='PARSE ERROR: '+e.message;
+    setStatus('PARSE ERROR','var(--red)');
+    showScore(0,false);
+    showReportError(e.message);
+    return;
+  }
+  lastParsed=obj;
+  const results=schema.req.map(f=>{
+    const v=getField(obj,f);
+    const present=v!==undefined&&v!==null&&v!==''&&!(Array.isArray(v)&&!v.length);
+    return{field:f,present};
+  });
+  const passed=results.filter(r=>r.present).length;
+  const total=results.length;
+  const score=total===0?100:Math.round(passed/total*100);
+  const isPass=score>=95||total===0;
+  showScore(score,isPass);
+  renderReqList(results);
+  renderReport(obj,results,schema,score,isPass);
+  renderTree(obj);
+  document.getElementById('raw-out').textContent=JSON.stringify(obj,null,2);
+  document.getElementById('export-btn').disabled=false;
+  setStatus('VALIDATED — '+schema.name+' — '+score+'%',isPass?'var(--green)':'var(--amber)');
+}
+
+function showScore(score,pass){
+  const wrap=document.getElementById('score-wrap');
+  wrap.classList.add('vis');
+  const col=pass?'var(--green)':score>=60?'var(--amber)':'var(--red)';
+  document.getElementById('score-num').textContent=score+'%';
+  document.getElementById('score-num').style.color=col;
+  document.getElementById('score-fill').style.width=score+'%';
+  document.getElementById('score-fill').style.background=col;
+  document.getElementById('verdict').textContent=pass?'✓ PASS':'✗ FAIL';
+  document.getElementById('verdict').style.color=pass?'var(--green)':'var(--red)';
+}
+
+function renderReqList(results){
+  const list=document.getElementById('req-list');
+  list.classList.add('vis');
+  if(!results.length){list.innerHTML='<div class="req-row"><span style="color:var(--text-mid);font-size:9px">Generic — no required fields</span></div>';return}
+  list.innerHTML=results.map(r=>`<div class="req-row"><span class="req-field ${r.present?'ok':''}">${r.field}</span><span class="req-icon ${r.present?'pass':'fail'}">${r.present?'✓':'✗'}</span></div>`).join('');
+}
+
+function renderReport(obj,results,schema,score,isPass){
+  document.getElementById('report-empty').style.display='none';
+  const c=document.getElementById('report-content');
+  c.style.display='block';
+  const lds=obj._lds||{};
+  const inf=obj.inference||{};
+  let html='';
+  html+=`<div class="report-section"><div class="report-section-title">Summary</div>
+    <div class="field-row"><span class="field-key present">schema</span><span style="font-size:8px;color:var(--text-mid)">${schema.name}</span></div>
+    <div class="field-row"><span class="field-key present">score</span><span style="color:${isPass?'var(--green)':'var(--red)'};font-size:10px;font-weight:bold">${score}%</span></div>
+    <div class="field-row"><span class="field-key present">fields</span><span style="color:var(--white);font-size:9px">${results.filter(r=>r.present).length}/${results.length}</span></div>
+  </div>`;
+  if(lds.id){
+    html+=`<div class="report-section"><div class="report-section-title">Identity</div>
+      <div class="field-row"><span class="field-key present">id</span><span style="color:var(--green);font-size:8px;word-break:break-all">${lds.id}</span></div>
+      <div class="field-row"><span class="field-key present">type</span><span style="font-size:9px">${lds.type||'—'}</span></div>
+      <div class="field-row"><span class="field-key present">version</span><span style="font-size:9px">${lds.v||'—'}</span></div>
+      <div class="field-row"><span class="field-key present">origin</span><span style="font-size:9px;color:var(--text-mid)">${lds.origin||'—'}</span></div>
+      ${lds.supersedes?`<div class="field-row"><span class="field-key present">supersedes</span><span style="font-size:8px;color:var(--amber)">${lds.supersedes}</span></div>`:''}
+    </div>`;
+  }
+  const failed=results.filter(r=>!r.present);
+  const ok=results.filter(r=>r.present);
+  if(failed.length){html+=`<div class="report-section"><div class="report-section-title" style="color:var(--red)">Missing (${failed.length})</div>${failed.map(r=>`<div class="field-row"><span class="field-key">${r.field}</span><span class="field-badge fail">MISSING</span></div>`).join('')}</div>`}
+  if(ok.length){html+=`<div class="report-section"><div class="report-section-title" style="color:var(--green)">Present (${ok.length})</div>${ok.map(r=>`<div class="field-row"><span class="field-key present">${r.field}</span><span class="field-badge pass">✓</span></div>`).join('')}</div>`}
+  const colors={relates_to:'var(--blue)',requires:'var(--red)',implies:'var(--purple)',allowed_actions:'var(--green)',conflicts:'var(--red)'};
+  const refs=Object.entries(inf).flatMap(([type,arr])=>Array.isArray(arr)?arr.map(r=>({r,type})):[]);
+  if(refs.length){html+=`<div class="report-section"><div class="report-section-title">Inference Refs (${refs.length})</div>${refs.map(({r,type})=>`<div class="field-row"><span class="field-key present" style="font-size:8px">${r}</span><span style="font-size:7px;color:${colors[type]||'var(--text-mid)'};letter-spacing:1px">${type}</span></div>`).join('')}</div>`}
+  c.innerHTML=html;
+}
+
+function renderTree(obj){
+  document.getElementById('tree-empty').style.display='none';
+  const tc=document.getElementById('tree-content');
+  tc.style.display='block';
+  tc.innerHTML=buildTree(obj);
+}
+
+function buildTree(val){
+  if(val===null)return`<span class="tree-null">null</span>`;
+  if(typeof val==='boolean')return`<span class="tree-bool">${val}</span>`;
+  if(typeof val==='number')return`<span class="tree-num">${val}</span>`;
+  if(typeof val==='string')return`<span class="tree-str">"${esc(val)}"</span>`;
+  if(Array.isArray(val)){
+    if(!val.length)return`<span class="tree-bracket">[]</span>`;
+    const id='t'+Math.random().toString(36).slice(2);
+    return`<span class="tree-toggle" onclick="tog('${id}')">▼ [${val.length}]</span><div class="tree-children" id="${id}">${val.map(v=>`<div>${buildTree(v)}</div>`).join('')}</div>`;
+  }
+  if(typeof val==='object'){
+    const keys=Object.keys(val);
+    if(!keys.length)return`<span class="tree-bracket">{}</span>`;
+    const id='t'+Math.random().toString(36).slice(2);
+    return`<span class="tree-toggle" onclick="tog('${id}')">▼ {${keys.length}}</span><div class="tree-children" id="${id}">${keys.map(k=>`<div><span class="tree-key">${esc(k)}</span>: ${buildTree(val[k])}</div>`).join('')}</div>`;
+  }
+  return String(val);
+}
+
+function tog(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const tog=el.previousElementSibling;
+  if(el.style.display==='none'){el.style.display='block';if(tog)tog.textContent=tog.textContent.replace('►','▼')}
+  else{el.style.display='none';if(tog)tog.textContent=tog.textContent.replace('▼','►')}
+}
+
+function showReportError(msg){
+  document.getElementById('report-empty').style.display='none';
+  document.getElementById('report-content').style.display='block';
+  document.getElementById('report-content').innerHTML=`<div class="report-section"><div class="report-section-title" style="color:var(--red)">Parse Error</div><div style="color:var(--red);font-size:9px;line-height:1.6">${esc(msg)}</div></div>`;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.rtab').forEach((t,i)=>{const names=['report','tree','raw'];t.classList.toggle('active',names[i]===name)});
+  document.querySelectorAll('.rtab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function exportJSON(){
+  if(!lastParsed)return;
+  const blob=new Blob([JSON.stringify(lastParsed,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const id=(lastParsed._lds?.id||'entity').split('/').pop();
+  a.href=url;a.download=id+'_'+Date.now().toString(36).toUpperCase()+'.lds.json';
+  a.click();URL.revokeObjectURL(url);
+  setStatus('EXPORTED — '+a.download,'var(--green)');
+}
+
+function loadExample(){
+  ta.value=JSON.stringify({"_lds":{"v":"0.1.0","id":"lds:construction/assembly/example-unit","type":"mechanical_assembly","created_at":"2026-02-18T00:00:00Z","origin":"jenkintown-electricity"},"vectors":{"category":["construction:mechanical","assembly:example","material:steel"],"spatial":{"bounds":[[0,0,0],[1200,800,400]],"units":"millimeters"},"temporal":{"install_phase":3}},"core":{"name":"Example Assembly Unit","manufacturer":"Jenkintown Electricity Corporation","bom_structure":[{"role":"frame","material_type":"structural-steel","quantity":4,"unit":"units"},{"role":"panel","material_type":"aluminum-sheet","quantity":8,"unit":"units"}]},"inference":{"relates_to":["lds:construction/assembly/power-distribution-node"],"requires":["lds:construction/material/structural-steel"],"implies":["lds:construction/assembly/field-installation-ready"]},"media":{"spec_sheet":"https://github.com/jenkintownelectricity/example/blob/main/spec.pdf"}},null,2);
+  updateLineNums();
+  setStatus('EXAMPLE LOADED — hit VALIDATE or Ctrl+Enter','var(--amber)');
+}
+
+function clearEditor(){
+  ta.value='';updateLineNums();
+  document.getElementById('score-wrap').classList.remove('vis');
+  document.getElementById('req-list').classList.remove('vis');
+  document.getElementById('report-empty').style.display='flex';
+  document.getElementById('report-content').style.display='none';
+  document.getElementById('tree-empty').style.display='flex';
+  document.getElementById('tree-content').style.display='none';
+  document.getElementById('raw-out').textContent='// Validate to see formatted JSON';
+  document.getElementById('export-btn').disabled=true;
+  document.getElementById('ferr').textContent='';
+  lastParsed=null;
+  setStatus('L1 KERNEL SANDBOX — IDLE',null);
+}
+
+function setStatus(msg,color){
+  const el=document.getElementById('fstat');
+  el.textContent=msg;el.style.color=color||'var(--text-dim)';
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runValidation()}});
+</script>
+</body>
+</html>

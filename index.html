@@ -83,6 +83,11 @@
   .bredirect:hover{background:rgba(255,170,0,.08)}
   footer{border-top:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim)}
   .carea::-webkit-scrollbar{width:3px}.carea::-webkit-scrollbar-track{background:var(--black)}.carea::-webkit-scrollbar-thumb{background:var(--border)}
+
+  .sitenav{display:flex;gap:6px;align-items:center}
+  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--text-dim);text-decoration:none;letter-spacing:2px;transition:all .15s}
+  .navbtn:hover{border-color:var(--green);color:var(--green)}
+  .navbtn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
 </style>
 </head>
 <body>
@@ -93,8 +98,12 @@
     <div><span class="dot" id="cdot"></span><span id="clabel">CLAUDE —</span></div>
     <div><span class="dot" id="gdot"></span><span id="glabel">GROQ —</span></div>
     <div><span class="dot" id="odot"></span><span id="olabel">GPT —</span></div>
-    <div>ValidKernel Orchestrator v2.1</div>
   </div>
+  <nav class="sitenav">
+    <a class="navbtn active" href="index.html">BOUNCE</a>
+    <a class="navbtn" href="graph.html">GRAPH</a>
+    <a class="navbtn" href="sandbox.html">SANDBOX</a>
+  </nav>
 </header>
 
 <main>

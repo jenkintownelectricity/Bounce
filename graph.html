@@ -391,6 +391,11 @@
     opacity: 0;
     transition: opacity 0.15s;
   }
+
+  .sitenav{display:flex;gap:6px;align-items:center}
+  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--text-mid);text-decoration:none;letter-spacing:2px;transition:all .15s}
+  .navbtn:hover{border-color:var(--green);color:var(--green)}
+  .navbtn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
 </style>
 </head>
 <body>
@@ -405,6 +410,11 @@
     <div class="hstat"><div class="dot dot-dim"></div> GHOST</div>
     <div class="badge" id="nodecount">0 ENTITIES</div>
   </div>
+  <nav class="sitenav">
+    <a class="navbtn" href="index.html">BOUNCE</a>
+    <a class="navbtn active" href="graph.html">GRAPH</a>
+    <a class="navbtn" href="sandbox.html">SANDBOX</a>
+  </nav>
 </header>
 
 <main>
