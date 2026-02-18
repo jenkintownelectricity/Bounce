@@ -153,6 +153,38 @@
   .hoverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
   .hoverlay.open{display:block}
 
+
+  /* ── DIFF VIEW ─────────────────────────────────── */
+  .diff-wrap{margin-top:8px;border-top:1px solid var(--border);padding-top:8px;display:none}
+  .diff-wrap.open{display:block}
+  .diff-title{font-family:'Space Mono',monospace;font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+  .diff-toggle{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'Space Mono',monospace;font-size:7px;padding:2px 6px;cursor:pointer;letter-spacing:1px}
+  .diff-toggle:hover{border-color:var(--amber);color:var(--amber)}
+  .diff-summary{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+  .diff-badge{font-size:7px;padding:2px 6px;letter-spacing:1px;font-family:'Space Mono',monospace}
+  .diff-badge.add{background:rgba(0,255,136,.1);color:var(--green)}
+  .diff-badge.rem{background:rgba(255,34,68,.1);color:var(--red)}
+  .diff-badge.mod{background:rgba(255,170,0,.1);color:var(--amber)}
+  .diff-badge.unch{background:rgba(255,255,255,.04);color:var(--text-dim)}
+  .diff-lines{font-family:'Space Mono',monospace;font-size:9px;line-height:1.7;max-height:160px;overflow-y:auto;background:#050505;padding:8px;border:1px solid var(--border)}
+  .diff-lines::-webkit-scrollbar{width:2px}.diff-lines::-webkit-scrollbar-thumb{background:var(--border)}
+  .dl-add{color:var(--green)}.dl-rem{color:var(--red)}.dl-mod{color:var(--amber)}.dl-ctx{color:#444}
+  .diff-semantic{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+  .diff-sem-row{font-size:8px;font-family:'Space Mono',monospace;padding:3px 6px;background:#0a0a0a;border-left:2px solid var(--border)}
+  .diff-sem-row.add{border-left-color:var(--green);color:var(--green)}
+  .diff-sem-row.rem{border-left-color:var(--red);color:var(--red)}
+  .diff-sem-row.mod{border-left-color:var(--amber);color:var(--amber)}
+  /* ── TYPE VALIDATION ────────────────────────────── */
+  .tv-wrap{margin-top:6px;display:flex;flex-direction:column;gap:2px}
+  .tv-row{display:flex;align-items:center;justify-content:space-between;font-size:8px;font-family:'Space Mono',monospace;padding:2px 0;border-bottom:1px solid #0f0f0f}
+  .tv-row:last-child{border-bottom:none}
+  .tv-field{color:var(--text-dim);flex:1}
+  .tv-field.ok{color:var(--white)}
+  .tv-rule{font-size:7px;color:var(--text-dim);flex:0 0 60px;text-align:center}
+  .tv-st{font-size:7px;font-weight:bold;flex:0 0 24px;text-align:right}
+  .tv-st.p{color:var(--green)}.tv-st.f{color:var(--red)}
+  .tv-why{font-size:7px;color:var(--red);flex:0 0 auto;margin-left:6px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -507,6 +539,12 @@ async function launch(){
 
       setConv(v.score);
       S.bounces.push({bn,model:mname,role,output:clean,score:v.score,failed:v.failed});
+      // Diff + type validation
+      if(bn>1&&S.bounces.length>=2){
+        const prev=S.bounces[S.bounces.length-2];
+        renderDiff(runCard,prev.output,clean,bn);
+      }
+      renderTypeValidation(runCard,clean,sk);
       lastOut=clean;
 
       if(passed){
@@ -887,6 +925,183 @@ function clearHistory() {
 
 // Init count on load
 window.addEventListener('load', () => { updateHistoryCount(); }, {once: false});
+
+
+// ── DIFF ENGINE ──────────────────────────────────────────────────────────────
+function flattenObj(obj, prefix='') {
+  const out = {};
+  for (const [k, v] of Object.entries(obj || {})) {
+    const path = prefix ? prefix + '.' + k : k;
+    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      Object.assign(out, flattenObj(v, path));
+    } else {
+      out[path] = JSON.stringify(v);
+    }
+  }
+  return out;
+}
+
+function computeDiff(prevTxt, nextTxt) {
+  let prevObj, nextObj;
+  try { prevObj = JSON.parse(prevTxt); } catch(e) { prevObj = {}; }
+  try { nextObj = JSON.parse(nextTxt); } catch(e) { nextObj = {}; }
+
+  const prev = flattenObj(prevObj);
+  const next = flattenObj(nextObj);
+  const allKeys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+
+  const added = [], removed = [], modified = [], unchanged = [];
+
+  for (const k of allKeys) {
+    if (!(k in prev) && k in next) added.push({ path: k, val: next[k] });
+    else if (k in prev && !(k in next)) removed.push({ path: k, val: prev[k] });
+    else if (prev[k] !== next[k]) modified.push({ path: k, from: prev[k], to: next[k] });
+    else unchanged.push(k);
+  }
+
+  // Semantic summary (rule-based, no model call)
+  const semantic = [];
+  for (const a of added) semantic.push({ type:'add', msg: `+ ${a.path}: ${a.val}` });
+  for (const r of removed) semantic.push({ type:'rem', msg: `− ${r.path} removed (was ${r.val})` });
+  for (const m of modified) {
+    // Detect type coercion
+    let note = '';
+    try {
+      const fromParsed = JSON.parse(m.from);
+      const toParsed = JSON.parse(m.to);
+      if (typeof fromParsed !== typeof toParsed) {
+        note = ` [${typeof fromParsed}→${typeof toParsed}]`;
+      }
+    } catch(e) {}
+    semantic.push({ type:'mod', msg: `~ ${m.path}: ${m.from} → ${m.to}${note}` });
+  }
+
+  return { added, removed, modified, unchanged, semantic };
+}
+
+function renderDiff(card, prevTxt, nextTxt, bn) {
+  if (!prevTxt) return; // no previous to diff against
+  const diff = computeDiff(prevTxt, nextTxt);
+  const total = diff.added.length + diff.removed.length + diff.modified.length;
+  if (total === 0 && diff.unchanged.length > 0) return; // identical
+
+  const body = card.querySelector('.cbody');
+  if (!body) return;
+
+  // Build diff HTML
+  let html = `<div class="diff-wrap open">
+    <div class="diff-title">
+      <span>DIFF vs B${bn-1}</span>
+      <button class="diff-toggle" onclick="this.closest('.diff-wrap').querySelector('.diff-lines').style.display=this.closest('.diff-wrap').querySelector('.diff-lines').style.display==='none'?'block':'none';this.textContent=this.textContent==='▼ LINES'?'▲ LINES':'▼ LINES'">▼ LINES</button>
+    </div>
+    <div class="diff-summary">
+      ${diff.added.length?`<span class="diff-badge add">+${diff.added.length} ADDED</span>`:''}
+      ${diff.removed.length?`<span class="diff-badge rem">−${diff.removed.length} REMOVED</span>`:''}
+      ${diff.modified.length?`<span class="diff-badge mod">~${diff.modified.length} CHANGED</span>`:''}
+      ${diff.unchanged.length?`<span class="diff-badge unch">${diff.unchanged.length} SAME</span>`:''}
+    </div>
+    <div class="diff-lines">
+      ${diff.added.slice(0,30).map(a=>`<div class="dl-add">+ ${esc(a.path)}: ${esc(a.val)}</div>`).join('')}
+      ${diff.removed.slice(0,30).map(r=>`<div class="dl-rem">− ${esc(r.path)}: ${esc(r.val)}</div>`).join('')}
+      ${diff.modified.slice(0,30).map(m=>`<div class="dl-mod">~ ${esc(m.path)}<br>  ${esc(m.from)} → ${esc(m.to)}</div>`).join('')}
+      ${(diff.added.length+diff.removed.length+diff.modified.length>30)?'<div class="dl-ctx">... truncated</div>':''}
+    </div>
+    <div class="diff-semantic">
+      ${diff.semantic.slice(0,12).map(s=>`<div class="diff-sem-row ${s.type}">${esc(s.msg)}</div>`).join('')}
+    </div>
+  </div>`;
+  body.insertAdjacentHTML('beforeend', html);
+}
+
+// ── TYPE-AWARE VALIDATION ─────────────────────────────────────────────────────
+const TYPE_RULES = {
+  assembly: [
+    { path:'_lds.v',           rule:'type',   expected:'string' },
+    { path:'_lds.id',          rule:'type',   expected:'string' },
+    { path:'_lds.type',        rule:'enum',   values:['mechanical_assembly','structural_assembly','electrical_assembly','composite_assembly','agent_boundary'] },
+    { path:'_lds.created_at',  rule:'pattern',pattern:/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/ },
+    { path:'vectors.spatial.bounds', rule:'shape', validator: v => {
+      if(!Array.isArray(v)||v.length!==2)return'must be [[x,y,z],[x,y,z]]';
+      for(const pt of v){ if(!Array.isArray(pt)||pt.length!==3)return'each point must be [x,y,z]'; if(pt.some(n=>typeof n!=='number'))return'coords must be numbers'; }
+      return null;
+    }},
+    { path:'vectors.temporal.install_phase', rule:'type', expected:'number' },
+    { path:'core.bom_structure', rule:'type', expected:'array' },
+    { path:'inference.relates_to', rule:'type', expected:'array' },
+    { path:'inference.requires',   rule:'type', expected:'array' },
+  ],
+  material: [
+    { path:'_lds.v',   rule:'type', expected:'string' },
+    { path:'_lds.id',  rule:'type', expected:'string' },
+    { path:'_lds.type',rule:'type', expected:'string' },
+    { path:'inference.relates_to', rule:'type', expected:'array' },
+    { path:'inference.requires',   rule:'type', expected:'array' },
+  ],
+  boundary: [
+    { path:'_lds.v',    rule:'type', expected:'string' },
+    { path:'_lds.id',   rule:'type', expected:'string' },
+    { path:'_lds.type', rule:'enum', values:['agent_boundary','service_boundary','data_boundary'] },
+    { path:'core.domain', rule:'type', expected:'string' },
+    { path:'core.role',   rule:'enum', values:['l0-authority','l1-kernel','l2-proposer'] },
+    { path:'inference.allowed_actions', rule:'type', expected:'array' },
+    { path:'inference.conflicts',       rule:'type', expected:'array' },
+    { path:'inference.requires',        rule:'type', expected:'array' },
+  ],
+  generic: []
+};
+
+function validateTypes(txt, schemaKey) {
+  const rules = TYPE_RULES[schemaKey] || [];
+  if (!rules.length) return { results:[], score:100, typeScore:100 };
+  let obj;
+  try { obj = JSON.parse(txt); } catch(e) { return { results:[], score:0, typeScore:0, err:e.message }; }
+
+  const results = rules.map(rule => {
+    const val = getField(obj, rule.path);
+    if (val === undefined || val === null) return { path:rule.path, rule:rule.rule, pass:false, why:'missing' };
+    let why = null;
+    if (rule.rule === 'type') {
+      const actual = Array.isArray(val) ? 'array' : typeof val;
+      if (actual !== rule.expected) why = `got ${actual}, want ${rule.expected}`;
+    } else if (rule.rule === 'enum') {
+      if (!rule.values.includes(val)) why = `"${val}" not in [${rule.values.join('|')}]`;
+    } else if (rule.rule === 'pattern') {
+      if (!rule.pattern.test(String(val))) why = `"${val}" fails format check`;
+    } else if (rule.rule === 'shape') {
+      why = rule.validator(val);
+    }
+    return { path:rule.path, rule:rule.rule, pass:!why, why };
+  });
+
+  const passed = results.filter(r=>r.pass).length;
+  const typeScore = Math.round(passed / rules.length * 100);
+  return { results, typeScore };
+}
+
+function renderTypeValidation(card, clean, schemaKey) {
+  const tv = validateTypes(clean, schemaKey);
+  if (!tv.results.length) return;
+  const body = card.querySelector('.cbody');
+  if (!body) return;
+  let html = `<div class="tv-wrap">`;
+  html += tv.results.map(r => `
+    <div class="tv-row">
+      <span class="tv-field ${r.pass?'ok':''}">${r.path}</span>
+      <span class="tv-rule">${r.rule}</span>
+      <span class="tv-st ${r.pass?'p':'f'}">${r.pass?'✓':'✗'}</span>
+      ${r.why ? `<span class="tv-why" title="${esc(r.why)}">${esc(r.why)}</span>` : ''}
+    </div>`).join('');
+  html += `</div>`;
+  body.insertAdjacentHTML('beforeend', html);
+  // Blend type score into convergence bar
+  if (tv.typeScore !== undefined) {
+    const el = document.getElementById('cscore');
+    if (el && el.dataset.prescore) {
+      const blended = Math.round((parseInt(el.dataset.prescore) + tv.typeScore) / 2);
+      el.dataset.typescore = tv.typeScore;
+    }
+  }
+}
 
 function toggleMode(){
   document.body.classList.toggle('light');
