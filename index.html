@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOUNCE — ValidKernel Orchestrator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+  :root{--black:#080808;--white:#f0ede6;--green:#00ff88;--red:#ff2244;--amber:#ffaa00;--dim:#111;--border:#222;--text-dim:#444}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;overflow-x:hidden}
+  header{border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--black);z-index:100}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:5px}.logo span{color:var(--green)}
+  .hstatus{display:flex;gap:20px;align-items:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--border);display:inline-block;margin-right:5px;vertical-align:middle}
+  .dot.live{background:var(--green);animation:pulse 1.5s infinite}.dot.err{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  main{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 53px - 40px);overflow:hidden}
+  .pleft{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .phead{padding:16px 20px 12px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
+  .phead strong{display:block;color:var(--white);font-size:12px;margin-bottom:3px;letter-spacing:1px}
+  .aconf{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+  .arow{display:flex;align-items:center;gap:8px}
+  .alabel{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);width:72px;flex-shrink:0;letter-spacing:1px}
+  .alabel.ok{color:var(--green)}
+  input.akey{flex:1;background:var(--dim);border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:6px 9px;outline:none;border-radius:2px}
+  input.akey:focus{border-color:var(--green)}
+  .carea{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+  .clabel{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
+  textarea{flex:1;min-height:120px;background:var(--dim);border:1px solid var(--border);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6;padding:12px;resize:none;outline:none;border-radius:2px}
+  textarea:focus{border-color:var(--green)}
+  textarea::placeholder{color:var(--text-dim)}
+  select.ssel{width:100%;background:var(--dim);border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:7px 9px;outline:none;cursor:pointer;border-radius:2px}
+  select.ssel:focus{border-color:var(--green)}
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .sblock{background:var(--dim);border:1px solid var(--border);padding:10px;border-radius:2px}
+  .sblabel{font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+  .sbval{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green)}
+  .sctrl{display:flex;gap:3px;margin-top:3px}
+  .bsm{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:11px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:2px}
+  .bsm:hover{border-color:var(--green);color:var(--green)}
+  .btnlaunch{width:100%;padding:14px;background:var(--green);color:var(--black);border:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;cursor:pointer;transition:all .15s;border-radius:2px}
+  .btnlaunch:hover{background:var(--white)}.btnlaunch:disabled{background:var(--dim);color:var(--text-dim);cursor:not-allowed}
+  .pright{display:flex;flex-direction:column;overflow:hidden}
+  .bhead{padding:16px 24px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .btitle{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
+  .btitle strong{display:block;color:var(--white);font-size:12px;margin-bottom:3px}
+  .cblock{display:flex;align-items:center;gap:12px}
+  .cscore{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--green);line-height:1;min-width:70px;text-align:right}
+  .cbwrap{flex:1;max-width:180px}
+  .cblabel{font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-bottom:5px}
+  .cbar{height:3px;background:var(--dim);border-radius:2px;overflow:hidden}
+  .cfill{height:100%;background:var(--green);width:0%;transition:width .5s ease,background .3s;border-radius:2px}
+  .blog{flex:1;overflow-y:auto;padding:16px 24px;display:flex;flex-direction:column;gap:10px}
+  .blog::-webkit-scrollbar{width:3px}.blog::-webkit-scrollbar-track{background:var(--black)}.blog::-webkit-scrollbar-thumb{background:var(--border)}
+  .bcard{background:var(--dim);border:1px solid var(--border);border-radius:2px;overflow:hidden;animation:slin .25s ease;border-left:3px solid var(--border)}
+  .bcard.pass{border-left-color:var(--green)}.bcard.fail{border-left-color:var(--red)}.bcard.gate{border-left-color:var(--amber)}.bcard.converged{border:2px solid var(--green)}
+  @keyframes slin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .ch{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+  .ch:hover{background:rgba(255,255,255,.02)}
+  .cmeta{display:flex;align-items:center;gap:8px}
+  .cnum{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--text-dim);min-width:28px}
+  .cmod{font-family:'Space Mono',monospace;font-size:10px;color:var(--white)}
+  .crole{font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+  .cst{font-family:'Space Mono',monospace;font-size:9px;padding:2px 7px;border-radius:2px;letter-spacing:1px}
+  .cst.PASS{background:rgba(0,255,136,.12);color:var(--green)}.cst.FAIL{background:rgba(255,34,68,.12);color:var(--red)}.cst.GATE{background:rgba(255,170,0,.12);color:var(--amber)}.cst.RUNNING{background:rgba(255,255,255,.04);color:var(--text-dim)}
+  .cscr{font-family:'Space Mono',monospace;font-size:10px;color:var(--green)}
+  .cbody{padding:12px 14px;display:none}
+  .cbody.open{display:block}
+  .cbody pre{font-family:'Space Mono',monospace;font-size:10px;line-height:1.65;color:#888;white-space:pre-wrap;word-break:break-word}
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-dim);font-family:'Space Mono',monospace;font-size:11px;text-align:center;padding:40px}
+  .ebig{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--border);line-height:1;letter-spacing:5px}
+  .apanel{border-top:1px solid var(--border);padding:16px 24px;display:none;background:rgba(0,255,136,.02);flex-shrink:0}
+  .apanel.vis{display:block}
+  .atitle{font-family:'Space Mono',monospace;font-size:9px;color:var(--amber);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+  .aout{background:var(--dim);border:1px solid var(--border);padding:12px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.6;color:var(--white);max-height:130px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-bottom:12px;border-radius:2px}
+  .abuts{display:flex;gap:10px}
+  .bapprove{flex:1;padding:10px;background:var(--green);color:var(--black);border:none;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;border-radius:2px;transition:all .15s}
+  .bapprove:hover{background:var(--white)}
+  .bdeny{flex:1;padding:10px;background:none;color:var(--red);border:1px solid var(--red);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;border-radius:2px;transition:all .15s}
+  .bdeny:hover{background:rgba(255,34,68,.08)}
+  .bredirect{flex:1;padding:10px;background:none;color:var(--amber);border:1px solid var(--amber);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;cursor:pointer;border-radius:2px;transition:all .15s}
+  .bredirect:hover{background:rgba(255,170,0,.08)}
+  footer{border-top:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim)}
+  .carea::-webkit-scrollbar{width:3px}.carea::-webkit-scrollbar-track{background:var(--black)}.carea::-webkit-scrollbar-thumb{background:var(--border)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">BOUNCE<span>.</span></div>
+  <div class="hstatus">
+    <div><span class="dot" id="cdot"></span><span id="clabel">BUILDER —</span></div>
+    <div><span class="dot" id="gdot"></span><span id="glabel">EXECUTOR —</span></div>
+    <div>ValidKernel Orchestrator v1.1 — Groq Native</div>
+  </div>
+</header>
+
+<main>
+  <div class="pleft">
+    <div class="phead"><strong>L0 COMMAND</strong>Armand Lefebvre / Authority: FULL</div>
+
+    <div class="aconf">
+      <div class="arow">
+        <span class="alabel" id="alabel">GROQ KEY</span>
+        <input class="akey" type="password" id="akey" placeholder="gsk_...">
+      </div>
+      <div class="arow" style="display:none">
+        <span class="alabel" id="glabelk">GROQ</span>
+        <input class="akey" type="password" id="gkey" placeholder="gsk_...">
+      </div>
+    </div>
+
+    <div class="carea">
+      <div class="clabel">Command</div>
+      <textarea id="cmd" rows="5" placeholder="Enter L0 command...&#10;&#10;Example: Generate a valid LDS glazing assembly entity for a curtain wall unit with aluminum thermally broken frames and insulated glass."></textarea>
+
+      <div class="clabel">Schema</div>
+      <select class="ssel" id="schema">
+        <option value="assembly">lds://schemas/construction/assembly/v1</option>
+        <option value="material">lds://schemas/construction/material/v1</option>
+        <option value="boundary">lds://schemas/validkernel/boundary/v1</option>
+        <option value="generic">Generic — no schema enforcement</option>
+      </select>
+
+      <div class="sgrid">
+        <div class="sblock">
+          <div class="sblabel">Max Bounces</div>
+          <div class="sbval" id="mbdisp">6</div>
+          <div class="sctrl">
+            <button class="bsm" onclick="adj('mb',-1)">−</button>
+            <button class="bsm" onclick="adj('mb',1)">+</button>
+          </div>
+        </div>
+        <div class="sblock">
+          <div class="sblabel">Convergence %</div>
+          <div class="sbval" id="ctdisp">95</div>
+          <div class="sctrl">
+            <button class="bsm" onclick="adj('ct',-5)">−</button>
+            <button class="bsm" onclick="adj('ct',5)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btnlaunch" id="lbtn" onclick="launch()">LAUNCH BOUNCE</button>
+    </div>
+  </div>
+
+  <div class="pright">
+    <div class="bhead">
+      <div class="btitle"><strong>BOUNCE LOG</strong>L1 Kernel Gate — Real Time</div>
+      <div class="cblock">
+        <div class="cbwrap">
+          <div class="cblabel">CONVERGENCE</div>
+          <div class="cbar"><div class="cfill" id="cfill"></div></div>
+        </div>
+        <div class="cscore" id="cscore">—</div>
+      </div>
+    </div>
+
+    <div class="blog" id="blog">
+      <div class="empty" id="emp">
+        <div class="ebig">IDLE</div>
+        <div>Issue an L0 command to begin</div>
+        <div style="color:var(--border);margin-top:4px">L0 → L1 → L2 → bounce → L0</div>
+      </div>
+    </div>
+
+    <div class="apanel" id="apanel">
+      <div class="atitle">⬡ AWAITING L0 APPROVAL</div>
+      <div class="aout" id="aout"></div>
+      <div class="abuts">
+        <button class="bapprove" onclick="decide('APPROVE')">APPROVE</button>
+        <button class="bredirect" onclick="decide('REDIRECT')">REDIRECT</button>
+        <button class="bdeny" onclick="decide('DENY')">DENY</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>VALIDKERNEL / LEFEBVRE DESIGN SOLUTIONS</span>
+  <span id="sid">SESSION: —</span>
+  <span id="fstat">IDLE</span>
+</footer>
+
+<script>
+const S={mb:6,ct:95,running:false,bounces:[],sid:null,final:null,lastScore:0};
+
+const SCHEMAS={
+  assembly:{
+    name:'lds://schemas/construction/assembly/v1',
+    req:['_lds.v','_lds.id','_lds.type','vectors.category','core.name','core.manufacturer','core.bom_structure','inference.relates_to','inference.requires'],
+    sys:`You are an LDS entity generator. You follow instructions EXACTLY.
+
+RULES:
+- Output ONLY raw JSON. Start with {. End with }. No markdown. No prose. No explanation.
+- When given specific field values in the instruction, USE THOSE EXACT VALUES.
+- Never substitute placeholder values like "my-unit", "my-origin", "My Manufacturer".
+- Never hallucinate generic content when specific content is provided.
+- Required fields: _lds.v, _lds.id, _lds.type, _lds.created_at, _lds.origin, vectors.category (3+ tags), vectors.spatial.bounds (array format [[x,y,z],[x,y,z]]), vectors.temporal.install_phase (integer), core.name, core.manufacturer, core.bom_structure (array), inference.relates_to (array), inference.requires (array), inference.implies (array), media.spec_sheet.`
+  },
+  material:{
+    name:'lds://schemas/construction/material/v1',
+    req:['_lds.v','_lds.id','_lds.type','vectors.category','core.name','core.manufacturer'],
+    sys:`You are an LDS material entity generator. Output ONLY raw JSON. No markdown. No prose. Start with { end with }.
+Required: _lds.v, _lds.id (lds:construction/material/...), _lds.type, vectors.category (3+ tags), core.name, core.manufacturer, inference.relates_to, inference.requires.`
+  },
+  boundary:{
+    name:'lds://schemas/validkernel/boundary/v1',
+    req:['_lds.v','_lds.id','_lds.type','core.domain','core.role','inference.allowed_actions','inference.conflicts'],
+    sys:`You are a ValidKernel boundary entity generator. Output ONLY raw JSON. No markdown. Start with { end with }.
+Required: _lds.v, _lds.id, _lds.type="agent_boundary", core.domain, core.role, inference.allowed_actions (array), inference.conflicts (array), inference.requires (array).`
+  },
+  generic:{
+    name:'Generic',
+    req:[],
+    sys:`You are a precise, helpful assistant. Answer the user's request clearly and completely.`
+  }
+};
+
+function adj(k,d){
+  if(k==='mb'){S.mb=Math.max(2,Math.min(12,S.mb+d));document.getElementById('mbdisp').textContent=S.mb}
+  if(k==='ct'){S.ct=Math.max(60,Math.min(100,S.ct+d));document.getElementById('ctdisp').textContent=S.ct}
+}
+
+function getField(obj,path){return path.split('.').reduce((o,k)=>o&&o[k]!==undefined?o[k]:undefined,obj)}
+
+function validate(txt,schema){
+  if(!schema.req.length)return{score:100,passed:[],failed:[],obj:null};
+  let obj;
+  try{obj=JSON.parse(txt)}catch(e){return{score:0,passed:[],failed:schema.req,obj:null,err:e.message}}
+  const passed=[],failed=[];
+  for(const f of schema.req){
+    const v=getField(obj,f);
+    (v!==undefined&&v!==null&&v!==''&&!(Array.isArray(v)&&!v.length)?passed:failed).push(f);
+  }
+  return{score:Math.round(passed.length/schema.req.length*100),passed,failed,obj};
+}
+
+function extractJSON(t){
+  try{JSON.parse(t);return t}catch(e){}
+  const b=t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if(b)try{JSON.parse(b[1]);return b[1]}catch(e){}
+  const s=t.indexOf('{'),e=t.lastIndexOf('}');
+  if(s>-1&&e>-1){const c=t.slice(s,e+1);try{JSON.parse(c);return c}catch(e){}}
+  return t;
+}
+
+async function callGroq(prompt,sys,key){
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+    body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:sys},{role:'user',content:prompt}],temperature:0.05,max_tokens:2500})
+  });
+  if(!r.ok)throw new Error('Groq '+r.status+': '+await r.text());
+  return(await r.json()).choices[0].message.content;
+}
+
+async function callClaude(prompt,sys,key){
+  // Route through Groq (CORS-safe) using a different model as the "builder" role
+  // Claude Haiku via direct browser blocked by CORS on file:// — use Groq deepseek as builder
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'deepseek-r1-distill-llama-70b',
+      messages:[{role:'system',content:sys},{role:'user',content:prompt}],
+      temperature:0.05,
+      max_tokens:2500
+    })
+  });
+  if(!r.ok)throw new Error('Builder '+r.status+': '+await r.text());
+  const data=await r.json();
+  let content=data.choices[0].message.content;
+  // Strip deepseek <think> tags if present
+  content=content.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
+  return content;
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function addCard(num,model,role,status,content,score){
+  const log=document.getElementById('blog');
+  const emp=document.getElementById('emp');
+  if(emp)emp.remove();
+  const c=document.createElement('div');
+  c.className='bcard '+status.toLowerCase();
+  c.id='c'+num+model.replace(/\s/g,'');
+  const sid='cb'+num+model.replace(/\s/g,'');
+  c.innerHTML=`<div class="ch" onclick="tog('${sid}')">
+    <div class="cmeta">
+      <span class="cnum">${num>0?'B'+num:'⬡'}</span>
+      <div><div class="cmod">${model}</div><div class="crole">${role}</div></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      ${score!==null?`<span class="cscr">${score}%</span>`:''}
+      <span class="cst ${status}">${status}</span>
+    </div>
+  </div>
+  <div class="cbody" id="${sid}"><pre>${esc(content)}</pre></div>`;
+  log.appendChild(c);
+  log.scrollTop=log.scrollHeight;
+  return c;
+}
+
+function tog(id){const e=document.getElementById(id);if(e)e.classList.toggle('open')}
+
+function setConv(score){
+  S.lastScore=score;
+  document.getElementById('cscore').textContent=score+'%';
+  const f=document.getElementById('cfill');
+  f.style.width=score+'%';
+  f.style.background=score>=95?'var(--green)':score>=70?'var(--amber)':'var(--red)';
+}
+
+function setFoot(t){document.getElementById('fstat').textContent=t}
+
+async function launch(){
+  const cmd=document.getElementById('cmd').value.trim();
+  const gk=document.getElementById('gkey').value.trim();
+  const ak=gk;
+  const sk=document.getElementById('schema').value;
+  const schema=SCHEMAS[sk];
+
+  if(!cmd){alert('Enter an L0 command.');return}
+  if(!gk){alert('Groq API key required.');return}
+
+  S.running=true;S.bounces=[];S.final=null;
+  S.sid='BS-'+Date.now().toString(36).toUpperCase();
+
+  document.getElementById('blog').innerHTML='';
+  document.getElementById('apanel').classList.remove('vis');
+  document.getElementById('lbtn').disabled=true;
+  document.getElementById('lbtn').textContent='BOUNCING...';
+  document.getElementById('sid').textContent='SESSION: '+S.sid;
+  setConv(0);setFoot('RUNNING');
+
+  document.getElementById('cdot').className='dot live';
+  document.getElementById('gdot').className='dot live';
+  document.getElementById('clabel').textContent='BUILDER — ACTIVE';
+  document.getElementById('glabel').textContent='EXECUTOR — ACTIVE';
+
+  addCard(0,'L1 KERNEL','GATE CHECK','GATE',
+    `Command received.\nSchema: ${schema.name}\nRequired fields: ${schema.req.length}\nMax bounces: ${S.mb}\nThreshold: ${S.ct}%\n\n→ ROUTING TO L2 EXECUTOR`,null);
+
+  let lastOut='',consecutive=0,bn=0;
+
+  try{
+    while(bn<S.mb){
+      bn++;
+      const useGroq=(bn%2===1);
+      const mname=useGroq?'GROQ / Llama-3.3-70B':'GROQ / DeepSeek-R1-70B';
+      const role=useGroq?'EXECUTOR':'BUILDER';
+
+      let prompt;
+      if(bn===1){
+        prompt=`INSTRUCTION: ${cmd}\n\nYOU MUST FOLLOW THE INSTRUCTION ABOVE EXACTLY.\nDO NOT echo back the input entity unchanged.\nDO NOT ignore the requested changes.\nOutput ONLY raw JSON. Start with {. End with }. Nothing else.`;
+      } else {
+        const last=S.bounces[S.bounces.length-1];
+        prompt=`INSTRUCTION: ${cmd}\n\nYOUR PREVIOUS OUTPUT HAD THESE SCHEMA FAILURES:\n${last?.failed?.join('\n')||'none'}\n\nPREVIOUS OUTPUT FOR REFERENCE:\n${lastOut}\n\nFIX ALL FAILURES. APPLY ALL CHANGES FROM THE INSTRUCTION.\nOutput ONLY raw JSON. Start with {. End with }. Nothing else.`;
+      }
+
+      const runCard=addCard(bn,mname,role,'RUNNING',`Executing...`,null);
+      setFoot(`BOUNCE ${bn}/${S.mb} — ${mname}`);
+
+      let output;
+      try{
+        output=useGroq?await callGroq(prompt,schema.sys,gk):await callClaude(prompt,schema.sys,gk);
+      }catch(err){
+        runCard.className='bcard fail';
+        runCard.querySelector('.cst').textContent='FAIL';
+        runCard.querySelector('.cst').className='cst FAIL';
+        runCard.querySelector('pre').textContent='API ERROR: '+err.message;
+        if(useGroq){document.getElementById('gdot').className='dot err';document.getElementById('glabel').textContent='EXECUTOR — ERROR';}
+        else{document.getElementById('cdot').className='dot err';document.getElementById('clabel').textContent='BUILDER — ERROR';}
+        break;
+      }
+
+      const clean=schema.req.length>0?extractJSON(output):output;
+      const v=validate(clean,schema);
+
+      // Update card
+      const passed=v.score>=S.ct;
+      runCard.className='bcard '+(passed?'pass':'fail');
+      const st=runCard.querySelector('.cst');
+      st.textContent=passed?'PASS':'FAIL';
+      st.className='cst '+(passed?'PASS':'FAIL');
+
+      const meta=runCard.querySelector('.ch > div:last-child');
+      const scEl=document.createElement('span');
+      scEl.className='cscr';scEl.textContent=v.score+'%';
+      meta.insertBefore(scEl,meta.firstChild);
+
+      let bodyText=clean.length>900?clean.slice(0,900)+'\n\n[truncated — click header to expand]':clean;
+      if(v.failed.length)bodyText+='\n\nMISSING: '+v.failed.join(', ');
+      if(v.passed.length&&schema.req.length)bodyText+='\nPRESENT: '+v.passed.join(', ');
+      runCard.querySelector('pre').textContent=bodyText;
+
+      setConv(v.score);
+      S.bounces.push({bn,model:mname,role,output:clean,score:v.score,failed:v.failed});
+      lastOut=clean;
+
+      if(passed){
+        consecutive++;
+        addCard(0,'L1 KERNEL','GATE CHECK','GATE',
+          `✓ Bounce ${bn} PASSED — ${v.score}%\nConsecutive: ${consecutive}/2\n${consecutive>=2?'→ CONVERGENCE ACHIEVED':'→ Confirming...'}`,null);
+        if(consecutive>=2){
+          S.final=clean;
+          addCard(0,'CONVERGED','SESSION COMPLETE','GATE',
+            `Session: ${S.sid}\nBounces: ${bn}\nScore: ${v.score}%\n\n→ AWAITING L0 APPROVAL`,null);
+          break;
+        }
+      } else {
+        consecutive=0;
+        addCard(0,'L1 KERNEL','GATE CHECK','GATE',
+          `✗ Bounce ${bn} FAILED — ${v.score}%\nMissing: ${v.failed.join(', ')}\nReset consecutive to 0\n→ ROUTING BACK TO L2`,null);
+      }
+
+      await new Promise(r=>setTimeout(r,350));
+    }
+
+    if(!S.final&&S.bounces.length){
+      const best=S.bounces.reduce((a,b)=>b.score>a.score?b:a);
+      S.final=best.output;
+      addCard(0,'L1 KERNEL','MAX BOUNCES','GATE',
+        `Max bounces (${S.mb}) reached.\nBest: ${best.score}% at bounce ${best.bn}\nEscalating to L0.`,null);
+    }
+  }catch(err){
+    addCard(0,'SYSTEM','ERROR','FAIL','Fatal: '+err.message,null);
+  }
+
+  if(S.final){
+    document.getElementById('apanel').classList.add('vis');
+    document.getElementById('aout').textContent=S.final.length>1200?S.final.slice(0,1200)+'\n...[see log for full output]':S.final;
+  }
+
+  S.running=false;
+  document.getElementById('lbtn').disabled=false;
+  document.getElementById('lbtn').textContent='LAUNCH BOUNCE';
+  setFoot(`COMPLETE — ${S.bounces.length} bounces — ${S.lastScore}%`);
+}
+
+function decide(d){
+  document.getElementById('apanel').classList.remove('vis');
+  const c=addCard(0,'L0 / ARMAND LEFEBVRE','DECISION','GATE',
+    `DECISION: ${d}\nSession: ${S.sid}\nTimestamp: ${new Date().toISOString()}\n\n${
+      d==='APPROVE'?'✓ Approved. Downloading entity file.':
+      d==='DENY'?'✗ Denied. Issue new command.':
+      '⟳ Redirect. Modify command and relaunch.'
+    }`,null);
+
+  const col=d==='APPROVE'?'var(--green)':d==='DENY'?'var(--red)':'var(--amber)';
+  c.style.borderLeftColor=col;
+
+  setFoot('L0 '+d+' — '+S.sid);
+
+  if(d==='APPROVE'&&S.final){
+    const blob=new Blob([S.final],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=S.sid+'.lds.json';a.click();
+    URL.revokeObjectURL(url);
+  }
+  if(d==='REDIRECT')document.getElementById('cmd').focus();
+}
+
+// Init — pre-fill keys
+window.addEventListener('load',()=>{
+  const groqVal='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';
+  document.getElementById('akey').value=groqVal;
+  document.getElementById('gkey').value=groqVal;
+  document.getElementById('cdot').className='dot live';
+  document.getElementById('gdot').className='dot live';
+  document.getElementById('clabel').textContent='DEEPSEEK-R1 — READY';
+  document.getElementById('glabel').textContent='LLAMA-3.3 — READY';
+  document.getElementById('alabel').className='alabel ok';
+  document.getElementById('glabelk').className='alabel ok';
+  setFoot('IDLE — READY');
+});
+</script>
+</body>
+</html>
