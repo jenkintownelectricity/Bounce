@@ -100,6 +100,59 @@
   body.light .apanel{background:rgba(0,0,0,0.03)}
   body.light .aout{background:var(--dim);color:var(--white)}
   body.light .sblock{background:var(--dim)}
+
+  /* ── HISTORY DRAWER ─────────────────────────── */
+  .hdrw{position:fixed;top:0;left:0;width:320px;height:100vh;background:#0a0a0a;border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .25s ease}
+  .hdrw.open{transform:translateX(0)}
+  .hdrw-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .hdrw-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;color:var(--green)}
+  .hdrw-close{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:11px;padding:4px 8px;cursor:pointer}
+  .hdrw-close:hover{border-color:var(--red);color:var(--red)}
+  .hdrw-search{padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .hdrw-search input{width:100%;background:var(--dim);border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:6px 9px;outline:none}
+  .hdrw-search input:focus{border-color:var(--green)}
+  .hdrw-search input::placeholder{color:var(--text-dim)}
+  .hdrw-list{flex:1;overflow-y:auto;padding:8px 0}
+  .hdrw-list::-webkit-scrollbar{width:2px}.hdrw-list::-webkit-scrollbar-thumb{background:var(--border)}
+  .hdrw-item{padding:10px 16px;border-bottom:1px solid #111;cursor:pointer;transition:background .12s}
+  .hdrw-item:hover{background:rgba(255,255,255,.03)}
+  .hdrw-item.selected{background:rgba(0,255,136,.04);border-left:2px solid var(--green)}
+  .hdrw-sid{font-family:'Space Mono',monospace;font-size:9px;color:var(--green);letter-spacing:1px}
+  .hdrw-meta{font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);margin-top:3px}
+  .hdrw-dec{display:inline-block;font-size:7px;padding:1px 5px;letter-spacing:1px;margin-top:3px}
+  .hdrw-dec.APPROVE{background:rgba(0,255,136,.1);color:var(--green)}
+  .hdrw-dec.DENY{background:rgba(255,34,68,.1);color:var(--red)}
+  .hdrw-dec.REDIRECT{background:rgba(255,170,0,.1);color:var(--amber)}
+  .hdrw-dec.RUNNING{background:rgba(255,255,255,.05);color:var(--text-dim)}
+  .hdrw-cmd{font-size:9px;color:#666;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+  .hdrw-foot{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0}
+  .hdrw-btn{flex:1;background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:8px;padding:6px;cursor:pointer;letter-spacing:1px}
+  .hdrw-btn:hover{border-color:var(--green);color:var(--green)}
+  .hdrw-btn.danger:hover{border-color:var(--red);color:var(--red)}
+  /* Detail view */
+  .hdrw-detail{flex:1;overflow-y:auto;display:none;padding:0}
+  .hdrw-detail.open{display:flex;flex-direction:column}
+  .hdrw-detail::-webkit-scrollbar{width:2px}.hdrw-detail::-webkit-scrollbar-thumb{background:var(--border)}
+  .hdet-head{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .hdet-back{background:none;border:none;color:var(--amber);font-family:'Space Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:1px;padding:0;margin-bottom:8px}
+  .hdet-back:hover{color:var(--white)}
+  .hdet-sid{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;color:var(--green)}
+  .hdet-meta{font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);line-height:1.8;margin-top:4px}
+  .hdet-body{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+  .hdet-section{background:var(--dim);border:1px solid var(--border);padding:10px}
+  .hdet-label{font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px}
+  .hdet-bounce{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #111;font-size:9px}
+  .hdet-bounce:last-child{border-bottom:none}
+  .hdet-cmd{font-size:9px;color:#888;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+  .hdet-verdict{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;text-align:center;padding:8px 0}
+  /* History toggle button */
+  .hist-tog{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+  .hist-tog:hover{border-color:var(--green);color:var(--green)}
+  .hist-tog .hcount{display:inline-block;background:var(--green);color:var(--black);font-size:8px;padding:0 4px;min-width:16px;text-align:center;margin-left:4px}
+  /* Overlay */
+  .hoverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+  .hoverlay.open{display:block}
+
 </style>
 </head>
 <body>
@@ -208,6 +261,7 @@
 <footer>
   <span>VALIDKERNEL / LEFEBVRE DESIGN SOLUTIONS</span>
   <span id="sid">SESSION: —</span>
+  <button class="hist-tog" onclick="openHistory()">HISTORY <span class="hcount" id="hcount">0</span></button>
   <span id="fstat">IDLE</span>
 </footer>
 
@@ -387,6 +441,7 @@ async function launch(){
   document.getElementById('lbtn').disabled=true;
   document.getElementById('lbtn').textContent='BOUNCING...';
   document.getElementById('sid').textContent='SESSION: '+S.sid;
+  hlRecordStart();
   setConv(0);setFoot('RUNNING');
 
   document.getElementById('cdot').className='dot live';
@@ -542,6 +597,8 @@ CONFIDENCE: (0-100%)`;
   document.getElementById('lbtn').disabled=false;
   document.getElementById('lbtn').textContent='LAUNCH BOUNCE';
   setFoot(`COMPLETE — ${S.bounces.length} bounces — ${S.lastScore}%`);
+  // Update history with final bounce data
+  if(S.sid){const _r=hlLoad().find(x=>x.session_id===S.sid);if(_r){_r.bounces=S.bounces.map(b=>({bn:b.bn,model:b.model,role:b.role,score:b.score,failed:b.failed||[],passed:b.passed||[],output_preview:(b.output||'').slice(0,200)}));_r.total_bounces=S.bounces.length;_r.final_score=S.lastScore;_r.final_output_preview=S.final?S.final.slice(0,500):null;const _all=hlLoad();const _i=_all.findIndex(x=>x.session_id===S.sid);if(_i>=0){_all[_i]=_r;hlSave(_all);}}}
 }
 
 function decide(d){
@@ -557,6 +614,7 @@ function decide(d){
   c.style.borderLeftColor=col;
 
   setFoot('L0 '+d+' — '+S.sid);
+  hlRecord(d);
 
   if(d==='APPROVE'&&S.final){
     const blob=new Blob([S.final],{type:'application/json'});
@@ -600,6 +658,236 @@ window.addEventListener('load',()=>{
   setFoot('IDLE — ENTER API KEYS TO BEGIN');
 });
 
+
+// ── SESSION HISTORY / AUDIT LOG ──────────────────────────────────────────────
+const HL_KEY = 'vk-history-v1';
+
+function hlLoad() {
+  try { return JSON.parse(localStorage.getItem(HL_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function hlSave(records) {
+  try { localStorage.setItem(HL_KEY, JSON.stringify(records)); } catch(e) {}
+  updateHistoryCount();
+}
+
+function updateHistoryCount() {
+  const n = hlLoad().length;
+  document.getElementById('hcount').textContent = n;
+}
+
+function hlRecord(decision) {
+  if (!S.sid) return;
+  const records = hlLoad();
+  const existing = records.findIndex(r => r.session_id === S.sid);
+  const schema_el = document.getElementById('schema');
+  const record = {
+    session_id: S.sid,
+    created_at: new Date().toISOString(),
+    schema_name: schema_el ? schema_el.value : 'unknown',
+    max_bounces: S.mb,
+    threshold: S.ct,
+    models_used: { groq: 'llama-3.3-70b-versatile', claude: 'claude-haiku-4-5-20251001', gpt: 'gpt-4o-mini' },
+    command: (document.getElementById('cmd') || {}).value || '',
+    bounces: S.bounces.map(b => ({
+      bn: b.bn, model: b.model, role: b.role,
+      score: b.score, failed: b.failed || [], passed: b.passed || [],
+      output_preview: (b.output || '').slice(0, 200)
+    })),
+    final_score: S.lastScore,
+    total_bounces: S.bounces.length,
+    decision: decision,
+    download_filename: decision === 'APPROVE' ? S.sid + '.lds.json' : null,
+    final_output_preview: S.final ? S.final.slice(0, 500) : null
+  };
+  if (existing >= 0) { records[existing] = record; }
+  else { records.unshift(record); }
+  if (records.length > 200) records.splice(200);
+  hlSave(records);
+}
+
+// Auto-save as RUNNING when session starts
+function hlRecordStart() {
+  if (!S.sid) return;
+  const records = hlLoad();
+  const schema_el = document.getElementById('schema');
+  records.unshift({
+    session_id: S.sid,
+    created_at: new Date().toISOString(),
+    schema_name: schema_el ? schema_el.value : 'unknown',
+    max_bounces: S.mb,
+    threshold: S.ct,
+    models_used: { groq: 'llama-3.3-70b-versatile', claude: 'claude-haiku-4-5-20251001', gpt: 'gpt-4o-mini' },
+    command: (document.getElementById('cmd') || {}).value || '',
+    bounces: [], final_score: 0, total_bounces: 0,
+    decision: 'RUNNING', download_filename: null, final_output_preview: null
+  });
+  if (records.length > 200) records.splice(200);
+  hlSave(records);
+}
+
+function openHistory() {
+  renderHistoryList();
+  document.getElementById('hdrw').classList.add('open');
+  document.getElementById('hoverlay').classList.add('open');
+  document.getElementById('hdrw-detail').classList.remove('open');
+  document.getElementById('hdrw-list').style.display = 'block';
+}
+
+function closeHistory() {
+  document.getElementById('hdrw').classList.remove('open');
+  document.getElementById('hoverlay').classList.remove('open');
+}
+
+function renderHistoryList() {
+  const q = (document.getElementById('hsearch').value || '').toLowerCase();
+  const records = hlLoad().filter(r =>
+    !q || r.session_id.toLowerCase().includes(q) ||
+    (r.command || '').toLowerCase().includes(q) ||
+    (r.schema_name || '').includes(q) ||
+    (r.decision || '').toLowerCase().includes(q)
+  );
+  const list = document.getElementById('hdrw-list');
+  updateHistoryCount();
+  if (!records.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:9px;font-family:Space Mono,monospace">' + (q ? 'NO MATCHES' : 'NO SESSIONS YET') + '</div>';
+    return;
+  }
+  list.innerHTML = records.map(r => {
+    const dt = new Date(r.created_at);
+    const timeStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const cmdPreview = (r.command || '').slice(0, 60) + ((r.command||'').length > 60 ? '…' : '');
+    return `<div class="hdrw-item" onclick="showHistoryDetail('${r.session_id}')">
+      <div class="hdrw-sid">${r.session_id}</div>
+      <div class="hdrw-meta">${timeStr} · ${r.schema_name} · ${r.total_bounces}B · ${r.final_score}%</div>
+      <div><span class="hdrw-dec ${r.decision}">${r.decision}</span></div>
+      <div class="hdrw-cmd">${cmdPreview || '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function showHistoryDetail(sid) {
+  const records = hlLoad();
+  const r = records.find(x => x.session_id === sid);
+  if (!r) return;
+  const list = document.getElementById('hdrw-list');
+  const detail = document.getElementById('hdrw-detail');
+  list.style.display = 'none';
+  detail.classList.add('open');
+  const dt = new Date(r.created_at);
+  const decColor = r.decision === 'APPROVE' ? 'var(--green)' : r.decision === 'DENY' ? 'var(--red)' : r.decision === 'RUNNING' ? 'var(--text-dim)' : 'var(--amber)';
+  detail.innerHTML = `
+    <div class="hdet-head">
+      <button class="hdet-back" onclick="backToList()">← BACK</button>
+      <div class="hdet-sid">${r.session_id}</div>
+      <div class="hdet-meta">
+        ${dt.toLocaleDateString()} ${dt.toLocaleTimeString()}<br>
+        Schema: ${r.schema_name} · Max bounces: ${r.max_bounces} · Threshold: ${r.threshold}%<br>
+        Bounces used: ${r.total_bounces} · Final score: ${r.final_score}%
+      </div>
+    </div>
+    <div class="hdet-body">
+      <div class="hdet-section">
+        <div class="hdet-label">Decision</div>
+        <div class="hdet-verdict" style="color:${decColor}">${r.decision}</div>
+        ${r.download_filename ? `<div style="font-size:8px;color:var(--text-mid);text-align:center">${r.download_filename}</div>` : ''}
+      </div>
+      <div class="hdet-section">
+        <div class="hdet-label">L0 Command</div>
+        <div class="hdet-cmd">${r.command || '—'}</div>
+        <button onclick="reloadCommand('${sid}')" style="margin-top:8px;background:none;border:1px solid var(--border);color:var(--amber);font-family:Space Mono,monospace;font-size:8px;padding:4px 8px;cursor:pointer;letter-spacing:1px;width:100%">↩ RELOAD COMMAND</button>
+      </div>
+      <div class="hdet-section">
+        <div class="hdet-label">Bounce Timeline (${r.bounces.length})</div>
+        ${r.bounces.length ? r.bounces.map(b => `
+          <div class="hdet-bounce">
+            <span style="color:var(--text-dim);font-family:Space Mono,monospace">B${b.bn}</span>
+            <span style="color:var(--white);font-size:8px">${b.model}</span>
+            <span style="font-family:Space Mono,monospace;font-size:8px;color:var(--text-dim)">${b.role}</span>
+            <span style="color:${b.score>=r.threshold?'var(--green)':'var(--red)'};font-family:Space Mono,monospace">${b.score}%</span>
+          </div>`).join('') : '<div style="color:var(--text-dim);font-size:9px">No bounces recorded</div>'}
+      </div>
+      ${r.final_output_preview ? `
+      <div class="hdet-section">
+        <div class="hdet-label">Final Output Preview</div>
+        <pre style="font-family:Space Mono,monospace;font-size:9px;color:#777;white-space:pre-wrap;word-break:break-word;max-height:120px;overflow-y:auto">${r.final_output_preview}${r.final_output_preview.length >= 500 ? '\n...' : ''}</pre>
+        ${r.decision === 'APPROVE' ? `<button onclick="redownload('${sid}')" style="margin-top:8px;background:none;border:1px solid var(--green);color:var(--green);font-family:Space Mono,monospace;font-size:8px;padding:4px 8px;cursor:pointer;letter-spacing:1px;width:100%">↓ RE-DOWNLOAD</button>` : ''}
+      </div>` : ''}
+    </div>`;
+}
+
+function backToList() {
+  document.getElementById('hdrw-detail').classList.remove('open');
+  document.getElementById('hdrw-list').style.display = 'block';
+  renderHistoryList();
+}
+
+function reloadCommand(sid) {
+  const r = hlLoad().find(x => x.session_id === sid);
+  if (!r || !r.command) return;
+  document.getElementById('cmd').value = r.command;
+  if (r.schema_name) document.getElementById('schema').value = r.schema_name;
+  closeHistory();
+  document.getElementById('cmd').focus();
+}
+
+function redownload(sid) {
+  const records = hlLoad();
+  const r = records.find(x => x.session_id === sid);
+  if (!r || !r.final_output_preview) return;
+  // Try to get full output from current session if matching
+  const json = S.sid === sid && S.final ? S.final : r.final_output_preview;
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (r.download_filename || sid + '.lds.json');
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function exportHistory() {
+  const records = hlLoad();
+  const blob = new Blob([JSON.stringify(records, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'vk-audit-log-' + Date.now().toString(36).toUpperCase() + '.json';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importHistoryPrompt() { document.getElementById('himport').click(); }
+
+function importHistory(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) { alert('Invalid history file — expected JSON array.'); return; }
+      const existing = hlLoad();
+      const existingIds = new Set(existing.map(r => r.session_id));
+      const merged = [...existing, ...imported.filter(r => !existingIds.has(r.session_id))];
+      merged.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+      hlSave(merged);
+      renderHistoryList();
+      alert('Imported ' + imported.length + ' sessions (' + (merged.length - existing.length) + ' new).');
+    } catch(ex) { alert('Import failed: ' + ex.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearHistory() {
+  if (!confirm('Clear all ' + hlLoad().length + ' session records? This cannot be undone.')) return;
+  localStorage.removeItem(HL_KEY);
+  updateHistoryCount();
+  renderHistoryList();
+}
+
+// Init count on load
+window.addEventListener('load', () => { updateHistoryCount(); }, {once: false});
+
 function toggleMode(){
   document.body.classList.toggle('light');
   const tog=document.getElementById('modetog');
@@ -609,5 +897,28 @@ function toggleMode(){
 // Restore preference
 if(localStorage.getItem('vk-theme')==='light'){document.body.classList.add('light');document.getElementById('modetog').textContent='●'}
 </script>
+
+<!-- History overlay -->
+<div class="hoverlay" id="hoverlay" onclick="closeHistory()"></div>
+
+<!-- History drawer -->
+<div class="hdrw" id="hdrw">
+  <div class="hdrw-head">
+    <div class="hdrw-title">AUDIT LOG</div>
+    <button class="hdrw-close" onclick="closeHistory()">✕ CLOSE</button>
+  </div>
+  <div class="hdrw-search">
+    <input type="text" id="hsearch" placeholder="Search sessions..." oninput="renderHistoryList()">
+  </div>
+  <div class="hdrw-list" id="hdrw-list"></div>
+  <div class="hdrw-detail" id="hdrw-detail"></div>
+  <div class="hdrw-foot">
+    <button class="hdrw-btn" onclick="exportHistory()">EXPORT JSON</button>
+    <button class="hdrw-btn" onclick="importHistoryPrompt()">IMPORT</button>
+    <button class="hdrw-btn danger" onclick="clearHistory()">CLEAR ALL</button>
+  </div>
+</div>
+<input type="file" id="himport" accept=".json" style="display:none" onchange="importHistory(event)">
+
 </body>
 </html>
