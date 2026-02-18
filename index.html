@@ -90,9 +90,9 @@
 <header>
   <div class="logo">BOUNCE<span>.</span></div>
   <div class="hstatus">
-    <div><span class="dot" id="cdot"></span><span id="clabel">BUILDER —</span></div>
-    <div><span class="dot" id="gdot"></span><span id="glabel">EXECUTOR —</span></div>
-    <div>ValidKernel Orchestrator v1.1 — Groq Native</div>
+    <div><span class="dot" id="cdot"></span><span id="clabel">CLAUDE —</span></div>
+    <div><span class="dot" id="gdot"></span><span id="glabel">GROQ —</span></div>
+    <div>ValidKernel Orchestrator v2.0 — Claude + Groq</div>
   </div>
 </header>
 
@@ -102,10 +102,10 @@
 
     <div class="aconf">
       <div class="arow">
-        <span class="alabel" id="alabel">GROQ KEY</span>
-        <input class="akey" type="password" id="akey" placeholder="gsk_...">
+        <span class="alabel" id="alabel">ANTHROPIC</span>
+        <input class="akey" type="password" id="akey" placeholder="sk-ant-...">
       </div>
-      <div class="arow" style="display:none">
+      <div class="arow">
         <span class="alabel" id="glabelk">GROQ</span>
         <input class="akey" type="password" id="gkey" placeholder="gsk_...">
       </div>
@@ -258,24 +258,23 @@ async function callGroq(prompt,sys,key){
 }
 
 async function callClaude(prompt,sys,key){
-  // Route through Groq (CORS-safe) using a different model as the "builder" role
-  // Claude Haiku via direct browser blocked by CORS on file:// — use Groq deepseek as builder
-  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+    headers:{
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'content-type':'application/json',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
     body:JSON.stringify({
-      model:'deepseek-r1-distill-llama-70b',
-      messages:[{role:'system',content:sys},{role:'user',content:prompt}],
-      temperature:0.05,
-      max_tokens:2500
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:2500,
+      system:sys,
+      messages:[{role:'user',content:prompt}]
     })
   });
-  if(!r.ok)throw new Error('Builder '+r.status+': '+await r.text());
-  const data=await r.json();
-  let content=data.choices[0].message.content;
-  // Strip deepseek <think> tags if present
-  content=content.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
-  return content;
+  if(!r.ok)throw new Error('Claude '+r.status+': '+await r.text());
+  return(await r.json()).content[0].text;
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -318,12 +317,13 @@ function setFoot(t){document.getElementById('fstat').textContent=t}
 
 async function launch(){
   const cmd=document.getElementById('cmd').value.trim();
+  const ak=document.getElementById('akey').value.trim();
   const gk=document.getElementById('gkey').value.trim();
-  const ak=gk;
   const sk=document.getElementById('schema').value;
   const schema=SCHEMAS[sk];
 
   if(!cmd){alert('Enter an L0 command.');return}
+  if(!ak){alert('Anthropic API key required.');return}
   if(!gk){alert('Groq API key required.');return}
 
   S.running=true;S.bounces=[];S.final=null;
@@ -350,7 +350,7 @@ async function launch(){
     while(bn<S.mb){
       bn++;
       const useGroq=(bn%2===1);
-      const mname=useGroq?'GROQ / Llama-3.3-70B':'GROQ / DeepSeek-R1-70B';
+      const mname=useGroq?'GROQ / Llama-3.3-70B':'CLAUDE / Haiku';
       const role=useGroq?'EXECUTOR':'BUILDER';
 
       let prompt;
@@ -366,7 +366,7 @@ async function launch(){
 
       let output;
       try{
-        output=useGroq?await callGroq(prompt,schema.sys,gk):await callClaude(prompt,schema.sys,gk);
+        output=useGroq?await callGroq(prompt,schema.sys,gk):await callClaude(prompt,schema.sys,ak);
       }catch(err){
         runCard.className='bcard fail';
         runCard.querySelector('.cst').textContent='FAIL';
@@ -467,16 +467,13 @@ function decide(d){
 
 // Init — pre-fill keys
 window.addEventListener('load',()=>{
-  const groqVal='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';
-  document.getElementById('akey').value=groqVal;
-  document.getElementById('gkey').value=groqVal;
-  document.getElementById('cdot').className='dot live';
-  document.getElementById('gdot').className='dot live';
-  document.getElementById('clabel').textContent='DEEPSEEK-R1 — READY';
-  document.getElementById('glabel').textContent='LLAMA-3.3 — READY';
-  document.getElementById('alabel').className='alabel ok';
-  document.getElementById('glabelk').className='alabel ok';
-  setFoot('IDLE — READY');
+  document.getElementById('akey').value='';
+  document.getElementById('gkey').value='';
+  document.getElementById('cdot').className='dot';
+  document.getElementById('gdot').className='dot';
+  document.getElementById('clabel').textContent='CLAUDE — KEY REQUIRED';
+  document.getElementById('glabel').textContent='GROQ — KEY REQUIRED';
+  setFoot('IDLE — ENTER API KEYS TO BEGIN');
 });
 </script>
 </body>
