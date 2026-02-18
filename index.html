@@ -85,9 +85,21 @@
   .carea::-webkit-scrollbar{width:3px}.carea::-webkit-scrollbar-track{background:var(--black)}.carea::-webkit-scrollbar-thumb{background:var(--border)}
 
   .sitenav{display:flex;gap:6px;align-items:center}
-  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--text-dim);text-decoration:none;letter-spacing:2px;transition:all .15s}
+  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--white);text-decoration:none;letter-spacing:2px;transition:all .15s}
   .navbtn:hover{border-color:var(--green);color:var(--green)}
   .navbtn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
+  .modetoggle{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+  .modetoggle:hover{border-color:var(--green);color:var(--green)}
+  body.light{--black:#f5f5f0;--white:#111;--dim:#e8e5de;--border:#ccc;--text-dim:#bbb;--text-mid:#888}
+  body.light header,body.light footer{background:var(--black)}
+  body.light .pleft,body.light .pright{background:var(--black)}
+  body.light input.akey{background:var(--dim);color:var(--white)}
+  body.light textarea{background:var(--dim);color:var(--white)}
+  body.light select.ssel{background:var(--dim);color:var(--white)}
+  body.light .bcard{background:var(--dim)}
+  body.light .apanel{background:rgba(0,0,0,0.03)}
+  body.light .aout{background:var(--dim);color:var(--white)}
+  body.light .sblock{background:var(--dim)}
 </style>
 </head>
 <body>
@@ -103,6 +115,7 @@
     <a class="navbtn active" href="index.html">BOUNCE</a>
     <a class="navbtn" href="graph.html">GRAPH</a>
     <a class="navbtn" href="sandbox.html">SANDBOX</a>
+    <button class="modetoggle" id="modetog" onclick="toggleMode()">◑</button>
   </nav>
 </header>
 
@@ -586,6 +599,15 @@ window.addEventListener('load',()=>{
 
   setFoot('IDLE — ENTER API KEYS TO BEGIN');
 });
+
+function toggleMode(){
+  document.body.classList.toggle('light');
+  const tog=document.getElementById('modetog');
+  tog.textContent=document.body.classList.contains('light')?'●':'◑';
+  localStorage.setItem('vk-theme',document.body.classList.contains('light')?'light':'dark');
+}
+// Restore preference
+if(localStorage.getItem('vk-theme')==='light'){document.body.classList.add('light');document.getElementById('modetog').textContent='●'}
 </script>
 </body>
 </html>

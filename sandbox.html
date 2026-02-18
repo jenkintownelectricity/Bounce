@@ -13,9 +13,15 @@
   .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:6px}
   .logo span{color:var(--green)}
   .sitenav{display:flex;gap:6px;align-items:center}
-  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--text-mid);text-decoration:none;letter-spacing:2px;transition:all .15s}
+  .navbtn{font-family:'Space Mono',monospace;font-size:10px;padding:5px 12px;border:1px solid var(--border);color:var(--white);text-decoration:none;letter-spacing:2px;transition:all .15s}
   .navbtn:hover{border-color:var(--green);color:var(--green)}
   .navbtn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
+  .modetoggle{background:none;border:1px solid var(--border);color:var(--white);font-family:'Space Mono',monospace;font-size:10px;padding:5px 10px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+  .modetoggle:hover{border-color:var(--green);color:var(--green)}
+  body.light{--black:#f5f5f0;--white:#111;--dim:#e8e5de;--border:#ccc;--text-dim:#bbb;--text-mid:#888}
+  body.light #json-input{background:var(--dim);color:var(--white)}
+  body.light .cpanel,body.light .rpanel,body.light .lpanel{background:var(--black)}
+  body.light select.ssel{background:var(--dim);color:var(--white)}
   main{display:grid;grid-template-columns:1fr 220px 1fr;overflow:hidden}
   .lpanel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
   .phead{padding:12px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -94,6 +100,7 @@
     <a class="navbtn" href="index.html">BOUNCE</a>
     <a class="navbtn" href="graph.html">GRAPH</a>
     <a class="navbtn active" href="sandbox.html">SANDBOX</a>
+    <button class="modetoggle" id="modetog" onclick="toggleMode()">◑</button>
   </nav>
 </header>
 <main>
@@ -344,6 +351,13 @@ function setStatus(msg,color){
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runValidation()}});
+
+function toggleMode(){
+  document.body.classList.toggle('light');
+  document.getElementById('modetog').textContent=document.body.classList.contains('light')?'●':'◑';
+  localStorage.setItem('vk-theme',document.body.classList.contains('light')?'light':'dark');
+}
+if(localStorage.getItem('vk-theme')==='light'){document.body.classList.add('light');setTimeout(()=>{document.getElementById('modetog').textContent='●'},0)}
 </script>
 </body>
 </html>
