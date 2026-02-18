@@ -1,0 +1,29 @@
+{
+  "_lds": {
+    "v": 1,
+    "id": "lds:validkernel/boundary/bounce-orchestrator-agent",
+    "type": "agent_boundary",
+    "origin": "lefebvre-design-solutions"
+  },
+  "core": {
+    "domain": "lds-entity-generation",
+    "role": "l2-proposer"
+  },
+  "inference": {
+    "allowed_actions": [
+      "generate_lds_entity",
+      "validate_schema",
+      "propose_corrections"
+    ],
+    "conflicts": [
+      "modify_kernel_invariants",
+      "approve_own_output",
+      "escalate_without_validation"
+    ],
+    "requires": [
+      "schema_reference_present",
+      "l0_command_issued",
+      "l1_gate_active"
+    ]
+  }
+}
