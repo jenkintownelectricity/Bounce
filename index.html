@@ -269,6 +269,7 @@
     <div><span class="dot" id="cdot"></span><span id="clabel">CLAUDE —</span></div>
     <div><span class="dot" id="gdot"></span><span id="glabel">GROQ —</span></div>
     <div><span class="dot" id="odot"></span><span id="olabel">GPT —</span></div>
+    <div><span class="dot" id="gemdot"></span><span id="gemlabel">GEMINI —</span></div>
   </div>
   <nav class="sitenav">
     <a class="navbtn active" href="index.html">BOUNCE</a>
@@ -295,6 +296,10 @@
       <div class="arow">
         <span class="alabel" id="olabelk">OPENAI</span>
         <input class="akey" type="password" id="okey" placeholder="sk-proj-...">
+      </div>
+      <div class="arow">
+        <span class="alabel" id="gemlabelk">GEMINI</span>
+        <input class="akey" type="password" id="gemkey" placeholder="AIza...">
       </div>
     </div>
 
@@ -414,6 +419,7 @@
 
 <script>
 const S={mb:6,ct:95,running:false,bounces:[],sid:null,final:null,lastScore:0};
+window._S=S;
 
 const SCHEMAS={
   assembly:{
@@ -458,13 +464,14 @@ Required fields — use EXACTLY these types:
   },
   command_audit:{
     name:'validkernel://schemas/command-audit/v1',
-    req:['command_id','authority','target','mission','phases','definition_of_done','persistent_progress_protocol'],
+    req:['command_id','authority','target','mission','phases','definition_of_done','persistent_progress_protocol','ambiguities','blockers','summary'],
     sys:`You are a ValidKernel L0 Command auditor. You receive a command document (markdown or text) and produce a structured audit JSON.
 
 RULES:
 - Output ONLY raw JSON. Start with {. End with }. No markdown. No prose.
 - Extract fields from the command text. If a field is present and complete, mark it present.
 - Be strict: vague or placeholder values count as MISSING.
+- DO NOT generate an audit_score or verdict — those are calculated deterministically by the kernel.
 
 Required output fields:
 {
@@ -472,15 +479,13 @@ Required output fields:
   "authority": "authority name and role, or MISSING",
   "target": "L2 target description, or MISSING",
   "mission": "one-sentence summary of the primary objective",
-  "phases": ["array of phase names found in the command"],
-  "definition_of_done": ["array of done criteria found, or empty array if missing"],
+  "phases": ["array of phase names found in the command — must have entry AND exit criteria per phase"],
+  "definition_of_done": ["array of done criteria found — must be specific and verifiable, not vague"],
   "persistent_progress_protocol": "present|partial|missing",
-  "ambiguities": ["list of any ambiguous instructions that would cause an AI agent to halt or guess"],
-  "missing_sections": ["list of required L0 sections that are absent or incomplete"],
-  "blockers": ["list of anything that would prevent an L2 agent from starting execution"],
-  "audit_score": <integer 0-100 — overall command quality>,
-  "verdict": "PASS if audit_score >= 80 and blockers array is empty, otherwise FAIL",
-  "summary": "one sentence explaining the verdict"
+  "ambiguities": ["list of any ambiguous instructions that would cause an AI agent to halt or guess — empty array if none"],
+  "missing_sections": ["list of required L0 sections that are absent or incomplete — empty array if none"],
+  "blockers": ["list of concrete blockers that would prevent an L2 agent from starting — empty array if none"],
+  "summary": "one sentence describing the command's objective and overall completeness"
 }`
   }
 };
@@ -492,16 +497,41 @@ function adj(k,d){
 
 function getField(obj,path){return path.split('.').reduce((o,k)=>o&&o[k]!==undefined?o[k]:undefined,obj)}
 
-function validate(txt,schema){
+function validate(txt,schema,schemaKey){
   if(!schema.req.length)return{score:100,passed:[],failed:[],obj:null};
   let obj;
   try{obj=JSON.parse(txt)}catch(e){return{score:0,passed:[],failed:schema.req,obj:null,err:e.message}}
   const passed=[],failed=[];
   for(const f of schema.req){
     const v=getField(obj,f);
-    (v!==undefined&&v!==null&&v!==''&&!(Array.isArray(v)&&!v.length)?passed:failed).push(f);
+    (v!==undefined&&v!==null&&v!==''&&v!=='MISSING'&&!(Array.isArray(v)&&!v.length)?passed:failed).push(f);
   }
-  return{score:Math.round(passed.length/schema.req.length*100),passed,failed,obj};
+  // Deterministic score: pure field count, no model opinion
+  let score=Math.round(passed.length/schema.req.length*100);
+
+  // command_audit: apply deductions for quality signals (deterministic rules, not model opinion)
+  if(schemaKey==='command_audit'&&obj){
+    let deductions=0;
+    // Deduct if blockers present (non-empty array)
+    if(Array.isArray(obj.blockers)&&obj.blockers.length>0) deductions+=15;
+    // Deduct if phases array is empty or missing entry/exit indicators
+    if(!Array.isArray(obj.phases)||obj.phases.length===0) deductions+=10;
+    // Deduct if definition_of_done is empty
+    if(!Array.isArray(obj.definition_of_done)||obj.definition_of_done.length===0) deductions+=10;
+    // Deduct if PPP is missing
+    if(obj.persistent_progress_protocol==='missing') deductions+=10;
+    // Deduct if command_id is MISSING
+    if(obj.command_id==='MISSING'||!obj.command_id) deductions+=15;
+    score=Math.max(0,score-deductions);
+  }
+
+  // Verdict is ALWAYS calculated by kernel — never by model
+  const threshold=window._S?window._S.ct:95;
+  const verdict=(schemaKey==='command_audit')
+    ? (score>=80&&(!obj?.blockers||obj.blockers.length===0)?'PASS':'FAIL')
+    : (score>=threshold?'PASS':'FAIL');
+
+  return{score,passed,failed,obj,verdict};
 }
 
 function extractJSON(t){
@@ -541,6 +571,23 @@ async function callClaude(prompt,sys,key){
   });
   if(!r.ok)throw new Error('Claude '+r.status+': '+await r.text());
   return(await r.json()).content[0].text;
+}
+
+async function callGemini(prompt,sys,key){
+  const model='gemini-2.0-flash';
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const r=await fetch(url,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:sys}]},
+      contents:[{role:'user',parts:[{text:prompt}]}],
+      generationConfig:{temperature:0.4,maxOutputTokens:1800}
+    })
+  });
+  if(!r.ok)throw new Error('Gemini '+r.status+': '+await r.text());
+  const d=await r.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'(no response)';
 }
 
 async function callGPT(prompt,sys,key){
@@ -595,6 +642,11 @@ function setConv(score){
 }
 
 function setFoot(t){document.getElementById('fstat').textContent=t}
+
+function injectDate(sys){
+  const today=new Date().toISOString().slice(0,10);
+  return `Today's date is ${today}. Dates in ${today.slice(0,4)} are current dates, not future dates.\n\n`+sys;
+}
 
 async function launch(){
   const cmd=document.getElementById('cmd').value.trim();
@@ -653,7 +705,7 @@ async function launch(){
 
       let output;
       try{
-        output=useGroq?await callGroq(prompt,schema.sys,gk):await callClaude(prompt,schema.sys,ak);
+        output=useGroq?await callGroq(prompt,injectDate(schema.sys),gk):await callClaude(prompt,injectDate(schema.sys),ak);
       }catch(err){
         runCard.className='bcard fail';
         runCard.querySelector('.cst').textContent='FAIL';
@@ -665,7 +717,7 @@ async function launch(){
       }
 
       const clean=schema.req.length>0?extractJSON(output):output;
-      const v=validate(clean,schema);
+      const v=validate(clean,schema,sk);
 
       // Update card
       const passed=v.score>=S.ct;
@@ -703,78 +755,99 @@ async function launch(){
           addCard(0,'CONVERGED','SESSION COMPLETE','GATE',
             `Session: ${S.sid}\nBounces: ${bn}\nScore: ${v.score}%\n\n→ RUNNING GPT FACT-CHECK`,null);
 
-          // GPT FACT-CHECKER PASS
+          // ── DETERMINISTIC SCORE (field-count rubric — no model can change this) ──
+          const REQUIRED_AUDIT_FIELDS = ['command_id','authority','target','mission','phases',
+            'definition_of_done','persistent_progress_protocol','ambiguities','blockers','summary'];
+          let deterministicScore = v.score;
+          let deterministicVerdict = v.score >= S.ct ? 'PASS' : 'FAIL';
+
+          if(sk === 'command_audit'){
+            let auditObj = null;
+            try { auditObj = JSON.parse(clean); } catch(e){}
+            if(auditObj){
+              const presentFields = REQUIRED_AUDIT_FIELDS.filter(f => {
+                const val = auditObj[f];
+                if(val === undefined || val === null || val === 'MISSING') return false;
+                if(Array.isArray(val)) return val.length > 0;
+                if(typeof val === 'string') return val.trim().length > 0;
+                return true;
+              });
+              deterministicScore = Math.round(presentFields.length / REQUIRED_AUDIT_FIELDS.length * 100);
+              const hasBlockers = auditObj.blockers && Array.isArray(auditObj.blockers) && auditObj.blockers.length > 0;
+              deterministicVerdict = (deterministicScore >= S.ct && !hasBlockers) ? 'PASS' : 'FAIL';
+              addCard(0,'L1 KERNEL','RUBRIC GATE','GATE',
+                `DETERMINISTIC SCORE: ${deterministicScore}%\nFields present: ${presentFields.length}/${REQUIRED_AUDIT_FIELDS.length}\nPresent: ${presentFields.join(', ')||'none'}\nBlockers: ${hasBlockers?auditObj.blockers.join('; '):'none'}\nVERDICT: ${deterministicVerdict}\n\nVerdict is locked to field-count rubric — no model can override.`,null);
+            }
+          }
+
+          // ── GPT FACT-CHECKER (findings only — cannot change verdict) ──────────
           const ok=document.getElementById('okey').value.trim();
           if(ok){
-            const gptCard=addCard(0,'GPT / gpt-4o-mini','FACT-CHECKER','RUNNING','Checking logical consistency...',null);
+            const gptCard=addCard(0,'GPT / gpt-4o-mini','FACT-CHECKER','RUNNING','Scanning for issues...',null);
             try{
               const isCommandAudit = sk === 'command_audit';
+              const gptSys = injectDate(isCommandAudit
+                ? `You are a ValidKernel governance auditor. You review L0 command audit reports and report FINDINGS ONLY. You are an observer — you do NOT issue a verdict. The verdict is locked by the kernel rubric and cannot be changed by you.`
+                : `You are a technical auditor. Review structured data for issues. Report FINDINGS ONLY — advisory, no verdict authority.`);
+
               const gptPrompt = isCommandAudit
-                ? `You are a strict L0 Command integrity auditor for ValidKernel governance.
+                ? `Review this command audit JSON. Report FINDINGS ONLY (no verdict — verdict is kernel-locked).\n\nCheck:\n1. command_id format: L0-CMD-YYYY-MMDD-NNN\n2. phases: entry/exit criteria present?\n3. definition_of_done: specific and verifiable?\n4. persistent_progress_protocol: PPP present?\n5. ambiguities: real blockers for an AI agent?\n\nAudit JSON:\n${clean}\n\nFormat:\nFINDINGS: (issues or "none")\nCONFIDENCE: (0-100%)`
+                : `Review for semantic consistency and data integrity. FINDINGS ONLY.\n\nEntity:\n${clean}\n\nFormat:\nFINDINGS: (issues or "none")\nCONFIDENCE: (0-100%)`;
 
-Review this command audit JSON produced by the L2 proposer and verify:
-1. command_id — is it present and follows L0-CMD-YYYY-MMDD-NNN format?
-2. phases — are all phases clearly defined with entry/exit criteria?
-3. definition_of_done — are done criteria specific and verifiable (not vague)?
-4. persistent_progress_protocol — is PPP present so work survives token limits?
-5. ambiguities — does the ambiguities array identify any real blockers for an AI agent?
-6. blockers — is the blockers array accurate?
-7. audit_score — is the score justified by the findings?
-8. verdict — does PASS/FAIL match the audit_score and blockers?
-
-Audit JSON to review:
-${clean}
-
-Respond in this exact format:
-VERDICT: PASS or FAIL
-ISSUES: (list any problems found, or "none")
-CONFIDENCE: (0-100%)`
-                : `You are a strict technical fact-checker for LDS (Logic Data System) entities.
-
-Review this entity and check for:
-1. Semantic consistency — do the type, category tags, BOM, and name all agree?
-2. Logical completeness — are inference.relates_to references plausible?
-3. Data integrity — are quantities, units, and spatial bounds reasonable?
-4. Schema compliance — are all required fields present and non-empty?
-
-Entity to review:
-${clean}
-
-Respond in this exact format:
-VERDICT: PASS or FAIL
-ISSUES: (list any problems found, or "none")
-CONFIDENCE: (0-100%)`;
-
-              const gptSys = isCommandAudit
-                ? `You are a precise ValidKernel governance auditor. You review L0 command audit reports for completeness and accuracy. Flag any audit findings that are vague, missing, or would prevent an AI agent from executing the command deterministically.`
-                : `You are a precise technical auditor. You review structured data for logical consistency and flag issues concisely. Never add fields or suggest improvements unless explicitly asked. Only audit what is there.`;
               const gptResult=await callGPT(gptPrompt,gptSys,ok);
+              const gptHasIssues = /findings:\s*(?!none)/i.test(gptResult);
 
-              const gptPass=gptResult.includes('VERDICT: PASS');
-              gptCard.className='bcard '+(gptPass?'pass':'fail');
-              gptCard.querySelector('.cst').textContent=gptPass?'PASS':'FAIL';
-              gptCard.querySelector('.cst').className='cst '+(gptPass?'PASS':'FAIL');
-              gptCard.querySelector('pre').textContent=gptResult;
-
-              if(!gptPass){
-                addCard(0,'L1 KERNEL','FACT-CHECK GATE','GATE',
-                  `GPT flagged issues.\n${gptResult}\n\n→ ESCALATING TO L0 FOR REVIEW ANYWAY`,null);
-              } else {
-                addCard(0,'L1 KERNEL','FACT-CHECK GATE','GATE',
-                  `✓ GPT fact-check PASSED\n→ AWAITING L0 APPROVAL`,null);
-              }
+              gptCard.className='bcard '+(gptHasIssues?'gate':'pass');
+              gptCard.querySelector('.cst').textContent=gptHasIssues?'NOTED':'CLEAR';
+              gptCard.querySelector('.cst').className='cst '+(gptHasIssues?'GATE':'PASS');
+              gptCard.querySelector('pre').textContent=gptResult+'\n\n[ADVISORY — verdict unchanged at '+deterministicVerdict+']';
+              S._gptResult = gptResult;
             }catch(err){
               gptCard.className='bcard gate';
               gptCard.querySelector('.cst').textContent='SKIP';
               gptCard.querySelector('.cst').className='cst GATE';
-              gptCard.querySelector('pre').textContent='GPT unavailable: '+err.message+'\n→ Skipping fact-check, escalating to L0';
+              gptCard.querySelector('pre').textContent='GPT unavailable: '+err.message+'\n→ Verdict unaffected';
             }
           } else {
-            addCard(0,'GPT','FACT-CHECKER','GATE','No OpenAI key — skipping fact-check\n→ AWAITING L0 APPROVAL',null);
+            addCard(0,'GPT','FACT-CHECKER','GATE','No OpenAI key — skipping\nVerdict determined by rubric only',null);
+          }
+
+          // ── GEMINI WILDCARD OBSERVER ──────────────────────────────────────────
+          const gemk=document.getElementById('gemkey').value.trim();
+          if(gemk){
+            const gemCard=addCard(0,'GEMINI 2.0 FLASH','WILDCARD OBSERVER','RUNNING','Analyzing from new angles...',null);
+            document.getElementById('gemdot').className='dot live';
+            document.getElementById('gemlabel').textContent='GEMINI — ANALYZING';
+            try{
+              const isCommandAudit = sk === 'command_audit';
+              const gemSys = injectDate(`You are a wildcard observer with three lenses: CODING (structural/logic gaps a dev would catch), MARKETING (clarity, positioning, buyer resonance), FINANCIAL (risk, cost, ROI buried in the spec). You are NOT a gatekeeper — your output is advisory only. Be direct, opinionated, and surprising. Say what the other models won't. Be punchy and brief.`);
+
+              const gemPrompt = isCommandAudit
+                ? `L0 COMMAND:\n${cmd}\n\nAUDIT RESULT:\n${clean}\n\nGive your wildcard take using all three lenses:\n\n🔧 CODING ANGLE:\n📣 MARKETING ANGLE:\n💰 FINANCIAL ANGLE:\n\n⚡ WILDCARD CALL: (your most surprising or contrarian observation — 1 sentence)`
+                : `ENTITY:\n${clean}\n\nWildcard take on this — all three lenses:\n\n🔧 CODING ANGLE:\n📣 MARKETING ANGLE:\n💰 FINANCIAL ANGLE:\n\n⚡ WILDCARD CALL: (1 sentence, surprising or contrarian)`;
+
+              const gemResult = await callGemini(gemPrompt, gemSys, gemk);
+              gemCard.className='bcard gate';
+              gemCard.querySelector('.cst').textContent='OBS';
+              gemCard.querySelector('.cst').className='cst GATE';
+              gemCard.querySelector('pre').textContent=gemResult+'\n\n[WILDCARD — advisory only, no gate authority]';
+              document.getElementById('gemdot').className='dot';
+              document.getElementById('gemlabel').textContent='GEMINI — DONE';
+              S._gemResult = gemResult;
+            }catch(err){
+              gemCard.className='bcard gate';
+              gemCard.querySelector('.cst').textContent='SKIP';
+              gemCard.querySelector('.cst').className='cst GATE';
+              gemCard.querySelector('pre').textContent='Gemini unavailable: '+err.message;
+              document.getElementById('gemdot').className='dot err';
+              document.getElementById('gemlabel').textContent='GEMINI — ERROR';
+            }
+          } else {
+            addCard(0,'GEMINI','WILDCARD','GATE','No Gemini key — add AIza... key to enable wildcard observer',null);
           }
 
           addCard(0,'CONVERGED','AWAITING L0','GATE',
-            `Session: ${S.sid}\nBounces: ${bn}\nKernel score: ${v.score}%\n\n→ AWAITING L0 APPROVAL`,null);
+            `Session: ${S.sid}\nBounces: ${bn}\nKernel score: ${deterministicScore}%\nVerdict: ${deterministicVerdict}\n\n→ AWAITING L0 APPROVAL`,null);
           break;
         }
       } else {
@@ -862,6 +935,12 @@ window.addEventListener('load',()=>{
     document.getElementById('olabel').textContent='GPT — '+(ok?'READY':'OPTIONAL');
     document.getElementById('olabelk').className='alabel'+(ok?' ok':'');
   });
+  document.getElementById('gemkey').addEventListener('input',e=>{
+    const ok=e.target.value.trim().length>10;
+    document.getElementById('gemdot').className='dot'+(ok?' live':'');
+    document.getElementById('gemlabel').textContent='GEMINI — '+(ok?'READY':'OPTIONAL');
+    document.getElementById('gemlabelk').className='alabel'+(ok?' ok':'');
+  });
 
   setFoot('IDLE — ENTER API KEYS TO BEGIN');
 });
@@ -896,7 +975,7 @@ function hlRecord(decision) {
     schema_name: schema_el ? schema_el.value : 'unknown',
     max_bounces: S.mb,
     threshold: S.ct,
-    models_used: { groq: 'llama-3.3-70b-versatile', claude: 'claude-haiku-4-5-20251001', gpt: 'gpt-4o-mini' },
+    models_used: { groq: 'llama-3.3-70b-versatile', claude: 'claude-haiku-4-5-20251001', gpt: 'gpt-4o-mini', gemini: 'gemini-2.0-flash' },
     command: (document.getElementById('cmd') || {}).value || '',
     bounces: S.bounces.map(b => ({
       bn: b.bn, model: b.model, role: b.role,
@@ -907,7 +986,9 @@ function hlRecord(decision) {
     total_bounces: S.bounces.length,
     decision: decision,
     download_filename: decision === 'APPROVE' ? S.sid + '.lds.json' : null,
-    final_output_preview: S.final ? S.final.slice(0, 500) : null
+    final_output_preview: S.final ? S.final.slice(0, 500) : null,
+    gpt_result: S._gptResult || null,
+    gem_result: S._gemResult || null
   };
   if (existing >= 0) { records[existing] = record; }
   else { records.unshift(record); }
@@ -926,7 +1007,7 @@ function hlRecordStart() {
     schema_name: schema_el ? schema_el.value : 'unknown',
     max_bounces: S.mb,
     threshold: S.ct,
-    models_used: { groq: 'llama-3.3-70b-versatile', claude: 'claude-haiku-4-5-20251001', gpt: 'gpt-4o-mini' },
+    models_used: { groq: 'llama-3.3-70b-versatile', claude: 'claude-haiku-4-5-20251001', gpt: 'gpt-4o-mini', gemini: 'gemini-2.0-flash' },
     command: (document.getElementById('cmd') || {}).value || '',
     bounces: [], final_score: 0, total_bounces: 0,
     decision: 'RUNNING', download_filename: null, final_output_preview: null
@@ -1335,14 +1416,26 @@ function openReplay(sid) {
 
   // GPT fact-check (if we have the data)
   if (r.gpt_result) {
-    const gptPass = r.gpt_result.includes('VERDICT: PASS');
+    const gptHasIssues = /findings:\s*(?!none)/i.test(r.gpt_result);
     steps.push({
-      type: gptPass ? 'pass' : 'fail',
+      type: gptHasIssues ? 'gate' : 'pass',
       label:'GPT', sublabel:'CHECK',
       model:'GPT / gpt-4o-mini', role:'FACT-CHECKER',
-      status: gptPass ? 'pass' : 'fail',
+      status: gptHasIssues ? 'gate' : 'pass',
       score:null,
-      content: r.gpt_result
+      content: r.gpt_result + '\n\n[ADVISORY — no gate authority]'
+    });
+  }
+
+  // Gemini wildcard (if we have the data)
+  if (r.gem_result) {
+    steps.push({
+      type: 'gate',
+      label:'GEM', sublabel:'WILDCARD',
+      model:'GEMINI 2.0 FLASH', role:'WILDCARD OBSERVER',
+      status: 'gate',
+      score:null,
+      content: r.gem_result + '\n\n[WILDCARD — advisory only]'
     });
   }
 
